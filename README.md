@@ -128,6 +128,8 @@ You can also write specs yourself and build them without Claude:
 ```bash
 python3 -m lego_explainer.build my-spec.json --open        # into the builds folder + gallery
 python3 -m lego_explainer.build my-spec.json --html out.html   # just one page
+python3 -m lego_explainer.build my-spec.json --html out.html --source-link https://github.com/you/repo
+                                                    # adds a GitHub button, as on the example pages
 ```
 
 `--open` uses the macOS `open` command. On Linux or Windows, leave it out and open the printed path in your browser; the same goes for pages Claude builds.

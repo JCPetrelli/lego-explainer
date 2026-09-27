@@ -30,6 +30,15 @@ $('title').textContent = spec.title;
 $('mode').textContent = spec.mode === 'themed' ? 'Themed model' : 'Stack';
 $('metaphor').textContent = spec.metaphor;
 document.title = spec.title;
+{
+  const url = document.querySelector('meta[name="lego-source"]')?.content;
+  if (url) {
+    const link = $('source-link');
+    link.href = url;
+    link.title = 'Source code and install instructions';
+    link.hidden = false;
+  }
+}
 (() => {
   const legend = $('legend');
   for (const g of spec.groups) {

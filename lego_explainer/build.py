@@ -43,7 +43,14 @@ def slugify(text):
     return slug[:60].rstrip("-") or "build"
 
 
-def render_html(spec):
+def check_source_link(url):
+    if url and not re.match(r"https?://", url):
+        raise ValueError(f"source link must start with http:// or https://, got {url!r}")
+
+
+def render_html(spec, source_link=None):
+    """Page HTML for a validated spec. source_link adds a "GitHub" button pointing at it."""
+    check_source_link(source_link)
     template = (VIEWER_DIR / "viewer.html").read_text()
     viewer_js = (VIEWER_DIR / "viewer.js").read_text()
     # No raw < > & inside the <script> block: "</script>" or "<!--" in a description
@@ -55,6 +62,7 @@ def render_html(spec):
     # Insert the viewer before the spec, one occurrence each, so text inside a
     # spec can never be mistaken for a template marker.
     page = template.replace("__TITLE__", html.escape(spec["title"]))
+    page = page.replace("__SOURCE_LINK__", html.escape(source_link or ""), 1)
     page = page.replace("/*__VIEWER_JS__*/", viewer_js, 1)
     return page.replace("/*__SPEC_JSON__*/", spec_json, 1)
 
@@ -68,14 +76,14 @@ def load_spec(spec_path):
     return spec
 
 
-def build(spec_path, builds_dir=None, today=None):
+def build(spec_path, builds_dir=None, today=None, source_link=None):
     """Validate the spec at spec_path and write <date>-<slug>.html/.json. Returns the HTML path."""
     spec = load_spec(spec_path)
     builds_dir = Path(builds_dir) if builds_dir else default_builds_dir()
     builds_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{(today or date.today()).isoformat()}-{slugify(spec['title'])}"
     html_path = builds_dir / f"{stem}.html"
-    html_path.write_text(render_html(spec))
+    html_path.write_text(render_html(spec, source_link))
     (builds_dir / f"{stem}.json").write_text(json.dumps(spec, indent=2, ensure_ascii=False))
     write_gallery(builds_dir)
     return html_path
@@ -88,15 +96,23 @@ def main(argv=None):
     parser.add_argument("--html", type=Path,
                         help="write just this one HTML file: no JSON copy, no gallery")
     parser.add_argument("--open", action="store_true", help="open the result in the browser")
+    parser.add_argument("--source-link", metavar="URL",
+                        help="show a GitHub button linking to URL (used for the published examples)")
     args = parser.parse_args(argv)
+
+    try:
+        check_source_link(args.source_link)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     try:
         if args.html:
             args.html.parent.mkdir(parents=True, exist_ok=True)
-            args.html.write_text(render_html(load_spec(args.spec)))
+            args.html.write_text(render_html(load_spec(args.spec), args.source_link))
             html_path = args.html
         else:
-            html_path = build(args.spec, args.out)
+            html_path = build(args.spec, args.out, source_link=args.source_link)
     except FileNotFoundError:
         print(f"error: spec file not found: {args.spec}", file=sys.stderr)
         return 1

@@ -38,7 +38,7 @@ just smoke builds/<file>.html <piece-id>         # headless Chrome check; npm-in
 It returns *all* errors as strings, because the skill's fix-and-rerun loop is limited to 3 attempts. Every membership test goes through `_in()`, since JSON values may be unhashable lists or dicts. Unknown keys are rejected via `SPEC_KEYS`, `GROUP_KEYS` and `PIECE_KEYS`: add new fields there.
 
 **Builder (`build.py`).** `default_builds_dir()` resolves in this order: `$LEGO_EXPLAINER_BUILDS`, then `builds/` if the engine root has `.git`, then `~/lego-explainer-builds`. The last case exists because plugin caches are replaced on update. `--html PATH` writes a single page with no gallery; that is how `examples/` is built.
-- `render_html` replaces the markers in `viewer/viewer.html`: `__TITLE__` (HTML-escaped), `/*__VIEWER_JS__*/` (the inlined `viewer.js`), and `/*__SPEC_JSON__*/`. The viewer is inserted before the spec, one occurrence each, so text inside a spec can't be mistaken for a marker.
+- `render_html` replaces the markers in `viewer/viewer.html`: `__TITLE__` (HTML-escaped), `__SOURCE_LINK__` (optional http(s) URL in a `<meta>`; the viewer shows a GitHub button when it is non-empty, and `just examples` sets it), `/*__VIEWER_JS__*/` (the inlined `viewer.js`), and `/*__SPEC_JSON__*/`. The viewer is inserted before the spec, one occurrence each, so text inside a spec can't be mistaken for a marker.
 - The spec JSON has `<`, `>` and `&` escaped as `<` and so on, and NaN is rejected both on load (`parse_constant`) and on dump (`allow_nan=False`).
 - Output is `builds/<date>-<slug>.html` plus a `.json` copy. `gallery.py` regenerates `index.html` from those JSON copies.
 - `viewer.js` must never contain `</` (it is inlined in a `<script>`) or the `/*__` marker prefix.

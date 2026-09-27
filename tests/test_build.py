@@ -151,3 +151,26 @@ def test_gallery_omits_date_for_undated_files(tmp_path):
     (tmp_path / "relativity.html").write_text("x")
     index = write_gallery(tmp_path).read_text()
     assert "relativity &middot;" not in index and "stack &middot; 2 pieces" in index
+
+
+def test_source_link_rendered_when_given():
+    html = render_html(base_spec(), source_link="https://github.com/o/r?a=1&b=\"x\"")
+    assert 'content="https://github.com/o/r?a=1&amp;b=&quot;x&quot;"' in html
+    assert "__SOURCE_LINK__" not in html
+
+
+def test_source_link_empty_by_default():
+    html = render_html(base_spec())
+    assert '<meta name="lego-source" content="">' in html
+
+
+def test_source_link_rejects_non_http():
+    with pytest.raises(ValueError):
+        render_html(base_spec(), source_link="javascript:alert(1)")
+
+
+def test_cli_source_link(tmp_path):
+    out = tmp_path / "p.html"
+    assert build_mod.main([str(spec_file(tmp_path)), "--html", str(out),
+                           "--source-link", "https://github.com/o/r"]) == 0
+    assert 'content="https://github.com/o/r"' in out.read_text()

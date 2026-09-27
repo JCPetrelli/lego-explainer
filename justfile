@@ -1,4 +1,5 @@
 port := "5733"
+repo_url := "https://github.com/JCPetrelli/lego-explainer"
 
 # Serve the gallery of builds and open it
 run:
@@ -15,7 +16,7 @@ build SPEC:
 
 # Rebuild the committed example pages from examples/*.json
 examples:
-    for f in examples/*.json; do python3 -m lego_explainer.build "$f" --html "${f%.json}.html"; done
+    for f in examples/*.json; do python3 -m lego_explainer.build "$f" --html "${f%.json}.html" --source-link {{repo_url}}; done
     python3 -c "from lego_explainer.gallery import write_gallery; write_gallery('examples')"
 
 # Link the skill into ~/.claude/skills (manual install without the plugin system)
