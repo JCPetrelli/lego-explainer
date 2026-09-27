@@ -32,7 +32,7 @@ const leader = await page.$eval('#leader', el => !el.hasAttribute('hidden'));
 await page.screenshot({ path: `${shotPrefix}-2-hover.png` });
 await page.mouse.click(p.x, p.y);
 await sleep(150);
-const popup = await page.$eval('#popup', el => ({ hidden: el.hidden, text: el.innerText }));
+const popup = await page.$eval('#popup', el => ({ hidden: el.hidden, text: el.innerText, leadBold: getComputedStyle(el.querySelector('.lead')).fontWeight, h: el.offsetHeight }));
 await page.screenshot({ path: `${shotPrefix}-3-popup.png` });
 await page.keyboard.press('Escape');
 await page.keyboard.press('e');

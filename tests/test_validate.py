@@ -19,8 +19,12 @@ def base_spec():
         ],
         "pieces": [
             {"id": "floor", "group": "base", "title": "Floor", "description": "Holds everything.",
+             "details": "The bottom layer. Everything else rests on it.",
+             "example": "Like the ground floor of a house.",
              "complexity": 3, "shape": "brick", "x": 0, "z": 0, "level": 0, "w": 2, "d": 4},
             {"id": "roof", "group": "top", "title": "Roof", "description": "Sits on the floor.",
+             "details": "The top layer. Needs the floor underneath.",
+             "example": "Like a roof on walls.",
              "complexity": 2, "shape": "brick", "x": 0, "z": 0, "level": 3, "w": 2, "d": 2},
         ],
     }
@@ -200,3 +204,23 @@ def test_overlap_keeps_registering_cells():
     errs = validate(s)
     assert any("'late' overlaps 'mid'" in e for e in errs)
     assert sum("'mid' overlaps 'floor'" in e for e in errs) == 1
+
+
+def test_details_required_and_capped():
+    s = base_spec()
+    del piece(s, "roof")["details"]
+    piece(s, "floor")["details"] = "word " * 121
+    errs = validate(s)
+    assert any("roof" in e and "details" in e for e in errs)
+    assert any("floor" in e and "121 words" in e for e in errs)
+
+
+def test_example_optional_but_checked():
+    s = base_spec()
+    del piece(s, "roof")["example"]
+    assert validate(s) == []
+    piece(s, "floor")["example"] = ""
+    piece(s, "roof")["example"] = "word " * 61
+    errs = validate(s)
+    assert any("floor" in e and "example" in e for e in errs)
+    assert any("roof" in e and "61 words" in e for e in errs)

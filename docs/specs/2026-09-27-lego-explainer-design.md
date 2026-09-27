@@ -60,6 +60,7 @@ The skill stays thin; all logic lives in the engine. The engine is registered in
 - No rotation field: orientation is expressed by swapping `w`/`d`. Slopes descend toward +z.
 - Colours: a fixed palette of 12 named LEGO colours (red, blue, yellow, green, dark-green, orange, white, light-grey, dark-grey, black, tan, azure). Pieces default to their group's colour; a piece may override within the palette.
 - Descriptions (groups and pieces): non-empty, at most 40 words.
+- `details` (pieces, required): longer explanation, at most 120 words. `example` (pieces, optional): one concrete example, at most 60 words, non-empty when present. *(Added 2026-09-27 after first release.)*
 
 ### Complexity → footprint
 
@@ -105,7 +106,7 @@ Button label cycles: *Explode → Pick a group → Reassemble*.
 
 **Hover.** Thin white outline on the brick; a leader line (line + end dot) from the brick to a title label placed off-model (screen-space, on the side away from the model centre), tracking during orbit. In states 1–2 the label reads `Group › Piece`.
 
-**Click.** Popup card beside the brick: title, complexity dots (●●○○○), group name, description. Closes on outside click or `Esc`. In state 2, clicking selects the group (enters state 3) instead of opening a piece popup; in states 1 and 3 it opens the piece popup.
+**Click.** Popup card beside the brick: title, complexity dots (●●○○○), group name, the description in bold, the `details` paragraph, and an "Example" box when `example` is set. The card scrolls if taller than the viewport. Closes on outside click or `Esc`. In state 2, clicking selects the group (enters state 3) instead of opening a piece popup; in states 1 and 3 it opens the piece popup.
 
 **Chrome.** Header: title, mode label (`Themed: castle` / `Stack`), metaphor line. Legend: group colours; brick-size-means-complexity note.
 

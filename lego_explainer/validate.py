@@ -2,6 +2,8 @@
 
 from .schema import (
     COMPLEXITY_RULES,
+    MAX_DETAIL_WORDS,
+    MAX_EXAMPLE_WORDS,
     MAX_GROUPS,
     MAX_PIECES,
     MAX_WORDS,
@@ -14,7 +16,7 @@ from .schema import (
 INT_FIELDS = ("x", "z", "level", "w", "d", "complexity")
 SPEC_KEYS = {"title", "target", "mode", "metaphor", "groups", "pieces"}
 GROUP_KEYS = {"id", "title", "description", "color"}
-PIECE_KEYS = {"id", "group", "title", "description", "complexity", "shape",
+PIECE_KEYS = {"id", "group", "title", "description", "details", "example", "complexity", "shape",
               "x", "z", "level", "w", "d", "color"}
 
 
@@ -51,11 +53,15 @@ def _check_text(label, obj, field, errors):
     return True
 
 
+def _check_words(label, obj, field, limit, errors):
+    if _check_text(label, obj, field, errors):
+        words = len(obj[field].split())
+        if words > limit:
+            errors.append(f"{label}: {field} has {words} words (max {limit})")
+
+
 def _check_description(label, obj, errors):
-    if _check_text(label, obj, "description", errors):
-        words = len(obj["description"].split())
-        if words > MAX_WORDS:
-            errors.append(f"{label}: description has {words} words (max {MAX_WORDS})")
+    _check_words(label, obj, "description", MAX_WORDS, errors)
 
 
 def _check_groups(groups, errors):
@@ -85,6 +91,9 @@ def _check_piece(p, group_ids, errors):
     for field in ("id", "group", "title", "shape"):
         ok &= _check_text(label, p, field, errors)
     _check_description(label, p, errors)
+    _check_words(label, p, "details", MAX_DETAIL_WORDS, errors)
+    if "example" in p:
+        _check_words(label, p, "example", MAX_EXAMPLE_WORDS, errors)
     for field in INT_FIELDS:
         value = p.get(field)
         if not _is_int(value):

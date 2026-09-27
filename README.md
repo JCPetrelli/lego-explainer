@@ -24,12 +24,13 @@ just run                                                     # gallery at http:/
 | Take one group apart | click a group while exploded |
 | Back / reassemble | `Esc` or **Back** / **Reassemble** |
 | Title | hover a brick (leader line + label) |
-| Description | click a brick |
+| Description, details, example | click a brick |
 
 ## Spec rules
 
 The full spec is in `docs/specs/2026-09-27-lego-explainer-design.md`. In short:
 - Positions are on a stud grid: `x`, `z`, `w`, `d` are in studs and `level` is in plates. A brick or slope is 3 plates tall, a plate or tile is 1.
+- Each piece has a bold `description` (≤ 40 words), a longer `details` (≤ 120 words) and an optional `example` (≤ 60 words).
 - The validator rejects overlaps, floating bricks, unknown groups, colours or shapes, and descriptions over 40 words.
 - Complexity fixes the footprint area: 1 → 1–2 (plate or tile), 2 → 2–4, 3 → 6–8, 4 → 12–16, 5 → ≥ 24.
 

@@ -29,6 +29,8 @@ COMPLEXITY_RULES = {
 }
 
 MODES = {"themed", "stack"}
-MAX_WORDS = 40
+MAX_WORDS = 40          # short description (bold line in the popup)
+MAX_DETAIL_WORDS = 120  # longer explanation
+MAX_EXAMPLE_WORDS = 60  # optional concrete example
 MAX_GROUPS = 8
 MAX_PIECES = 40

@@ -438,7 +438,11 @@ function openPopup(root) {
   pop.querySelector('.dots').textContent = '●'.repeat(p.complexity) + '○'.repeat(5 - p.complexity);
   pop.querySelector('.dots').title = `Complexity ${p.complexity} of 5`;
   pop.querySelector('.grp').textContent = groupOf(p.group).title;
-  pop.querySelector('p').textContent = p.description;
+  pop.querySelector('.lead').textContent = p.description;
+  pop.querySelector('.details').textContent = p.details;
+  pop.querySelector('.example p').textContent = p.example || '';
+  pop.querySelector('.example').hidden = !p.example;
+  pop.scrollTop = 0;
   pop.hidden = false;
   popupPiece = root;
   placePopup();
