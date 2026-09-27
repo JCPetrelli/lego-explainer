@@ -1,0 +1,28 @@
+{
+  "title": "How a web request is served",
+  "target": "HTTP request lifecycle",
+  "mode": "themed",
+  "metaphor": "Train: the browser locomotive pulls the request through the network, server and data wagons, in order.",
+  "groups": [
+    {"id": "browser", "title": "Browser", "description": "Locomotive. Starts the trip: turns a URL into an HTTP request, renders the answer.", "color": "red"},
+    {"id": "network", "title": "Network", "description": "First wagon. Finds the server and opens a secure channel to it.", "color": "blue"},
+    {"id": "server", "title": "Server", "description": "Second wagon. Receives the request, runs application code, builds the response.", "color": "green"},
+    {"id": "data", "title": "Data", "description": "Last wagon. Stores and returns the facts the app needs.", "color": "yellow"}
+  ],
+  "pieces": [
+    {"id": "engine", "group": "browser", "title": "Browser engine", "description": "Parses HTML, CSS, JS. Manages tabs, cache, cookies. Largest single piece of client software.", "complexity": 5, "shape": "plate", "x": 0, "z": 18, "level": 0, "w": 4, "d": 6},
+    {"id": "render", "group": "browser", "title": "Rendering", "description": "Lays out the page and paints pixels once the response arrives.", "complexity": 4, "shape": "brick", "x": 0, "z": 18, "level": 1, "w": 4, "d": 3},
+    {"id": "url", "group": "browser", "title": "URL entry", "description": "User types an address. Browser splits it into scheme, host, path.", "complexity": 3, "shape": "slope", "x": 0, "z": 21, "level": 1, "w": 4, "d": 2},
+    {"id": "request", "group": "browser", "title": "HTTP request", "description": "Method, path, headers, optional body. The cargo of the whole trip.", "complexity": 2, "shape": "brick", "x": 1, "z": 19, "level": 4, "w": 1, "d": 2, "color": "white"},
+    {"id": "tcp", "group": "network", "title": "TCP connection", "description": "Reliable byte stream between client and server. Three-way handshake, then ordered delivery.", "complexity": 4, "shape": "plate", "x": 0, "z": 12, "level": 0, "w": 4, "d": 4},
+    {"id": "dns", "group": "network", "title": "DNS lookup", "description": "Turns the host name into an IP address. Usually cached.", "complexity": 2, "shape": "brick", "x": 0, "z": 12, "level": 1, "w": 2, "d": 2},
+    {"id": "tls", "group": "network", "title": "TLS handshake", "description": "Verifies the server certificate, agrees keys. Everything after is encrypted.", "complexity": 3, "shape": "brick", "x": 2, "z": 12, "level": 1, "w": 2, "d": 4, "color": "azure"},
+    {"id": "lb", "group": "server", "title": "Load balancer", "description": "Picks one of many app servers for this request. Spreads load, hides failures.", "complexity": 4, "shape": "plate", "x": 0, "z": 6, "level": 0, "w": 4, "d": 4},
+    {"id": "app", "group": "server", "title": "App server", "description": "Runs your code: auth, business logic, templates. Returns status, headers, body.", "complexity": 4, "shape": "brick", "x": 0, "z": 6, "level": 1, "w": 4, "d": 3, "color": "dark-green"},
+    {"id": "cache", "group": "server", "title": "Cache", "description": "Keeps recent answers in memory. Skips the database when it can.", "complexity": 2, "shape": "brick", "x": 0, "z": 9, "level": 1, "w": 2, "d": 1},
+    {"id": "router", "group": "server", "title": "Router", "description": "Maps the path to a handler function.", "complexity": 1, "shape": "tile", "x": 1, "z": 7, "level": 4, "w": 2, "d": 1},
+    {"id": "query", "group": "data", "title": "Query layer", "description": "ORM or SQL. Translates app questions into database queries.", "complexity": 4, "shape": "plate", "x": 0, "z": 0, "level": 0, "w": 4, "d": 4},
+    {"id": "db", "group": "data", "title": "Database", "description": "Durable storage. Transactions, indexes, replication. Slowest hop, so it is cached.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 1, "w": 4, "d": 4, "color": "orange"},
+    {"id": "index", "group": "data", "title": "Index", "description": "Sorted lookup structure. Turns a full scan into a quick seek.", "complexity": 1, "shape": "tile", "x": 1, "z": 1, "level": 4, "w": 1, "d": 2}
+  ]
+}

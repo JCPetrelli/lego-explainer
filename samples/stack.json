@@ -1,0 +1,27 @@
+{
+  "title": "LEGO Explainer architecture",
+  "target": "~/Documents/Scripts/lego_explainer",
+  "mode": "stack",
+  "metaphor": "Stack: runtimes at the bottom, the Python engine and the 3D viewer on top of them, the skill that drives both at the summit.",
+  "groups": [
+    {"id": "runtime", "title": "Runtimes", "description": "What everything runs on: Python for building, three.js in the browser for rendering.", "color": "dark-grey"},
+    {"id": "engine", "title": "Engine", "description": "Python package. Validates a build spec, injects it into the viewer, updates the gallery.", "color": "blue"},
+    {"id": "viewer", "title": "Viewer", "description": "Fixed three.js page. Draws the bricks, animates the explode, shows labels and popups.", "color": "red"},
+    {"id": "skill", "title": "Skill", "description": "The Claude instructions. Turns a target into a spec, then calls the engine.", "color": "yellow"}
+  ],
+  "pieces": [
+    {"id": "python", "group": "runtime", "title": "Python 3.12", "description": "Stdlib only. Runs the validator and builder. No third-party packages.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 0, "w": 4, "d": 4},
+    {"id": "threejs", "group": "runtime", "title": "three.js", "description": "WebGL library. Renders meshes, lights, shadows. OrbitControls gives mouse orbit, zoom, pan.", "complexity": 4, "shape": "brick", "x": 4, "z": 0, "level": 0, "w": 4, "d": 4},
+    {"id": "cdn", "group": "runtime", "title": "jsDelivr CDN", "description": "Serves three.js at load time. Offline means no model.", "complexity": 1, "shape": "plate", "x": 8, "z": 0, "level": 0, "w": 1, "d": 2, "color": "azure"},
+    {"id": "schema", "group": "engine", "title": "schema.py", "description": "Palette, shape heights, complexity-to-size table. The shared vocabulary.", "complexity": 2, "shape": "brick", "x": 0, "z": 0, "level": 3, "w": 2, "d": 2},
+    {"id": "build", "group": "engine", "title": "build.py", "description": "CLI. Validates, writes the HTML and JSON into builds/, refreshes the gallery.", "complexity": 2, "shape": "brick", "x": 0, "z": 2, "level": 3, "w": 2, "d": 2},
+    {"id": "validate", "group": "engine", "title": "validate.py", "description": "Rejects bad specs: unknown refs, overlaps, floating bricks, size not matching complexity. Reports every error at once.", "complexity": 3, "shape": "brick", "x": 2, "z": 0, "level": 3, "w": 2, "d": 4},
+    {"id": "gallery", "group": "engine", "title": "gallery.py", "description": "Writes builds/index.html. One card per build, newest first.", "complexity": 1, "shape": "plate", "x": 0, "z": 0, "level": 6, "w": 1, "d": 2},
+    {"id": "scene", "group": "viewer", "title": "Scene", "description": "Baseplate, lights, bricks with studs. Converts stud coordinates to 3D.", "complexity": 4, "shape": "brick", "x": 4, "z": 0, "level": 3, "w": 4, "d": 3},
+    {"id": "explode", "group": "viewer", "title": "Explode", "description": "Three states: assembled, groups apart, one group apart. Tweened in 0.6 s.", "complexity": 2, "shape": "brick", "x": 4, "z": 3, "level": 3, "w": 2, "d": 1},
+    {"id": "hover", "group": "viewer", "title": "Hover label", "description": "Raycasts the pointer. Draws a leader line from brick to title.", "complexity": 2, "shape": "slope", "x": 6, "z": 3, "level": 3, "w": 2, "d": 1},
+    {"id": "popup", "group": "viewer", "title": "Popup", "description": "Click card: title, complexity dots, group, description.", "complexity": 1, "shape": "tile", "x": 5, "z": 0, "level": 6, "w": 1, "d": 1},
+    {"id": "skillmd", "group": "skill", "title": "SKILL.md", "description": "Workflow: understand target, decompose, pick mode, lay out bricks, build, report.", "complexity": 3, "shape": "brick", "x": 2, "z": 2, "level": 6, "w": 4, "d": 2},
+    {"id": "samples", "group": "skill", "title": "Samples", "description": "Two example specs. Test fixtures and layout patterns for Claude.", "complexity": 1, "shape": "tile", "x": 2, "z": 2, "level": 9, "w": 1, "d": 2}
+  ]
+}
