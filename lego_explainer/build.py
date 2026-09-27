@@ -23,6 +23,10 @@ class BuildError(Exception):
         self.errors = errors
 
 
+def _reject_constant(name):
+    raise ValueError(f"{name} is not allowed in a spec")
+
+
 def slugify(text):
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
     return slug[:60].rstrip("-") or "build"
@@ -31,8 +35,12 @@ def slugify(text):
 def render_html(spec):
     template = (VIEWER_DIR / "viewer.html").read_text()
     viewer_js = (VIEWER_DIR / "viewer.js").read_text()
-    # "</" would let a description close the <script> block early.
-    spec_json = json.dumps(spec, ensure_ascii=False).replace("</", "<\\/")
+    # No raw < > & inside the <script> block: "</script>" or "<!--" in a description
+    # would otherwise end it early. The \\u escapes are plain JSON string escapes.
+    spec_json = (
+        json.dumps(spec, ensure_ascii=False, allow_nan=False)
+        .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    )
     # Insert the viewer before the spec, one occurrence each, so text inside a
     # spec can never be mistaken for a template marker.
     page = template.replace("__TITLE__", html.escape(spec["title"]))
@@ -42,7 +50,7 @@ def render_html(spec):
 
 def build(spec_path, builds_dir=BUILDS_DIR, today=None):
     """Validate the spec at spec_path and write <date>-<slug>.html/.json. Returns the HTML path."""
-    spec = json.loads(Path(spec_path).read_text())
+    spec = json.loads(Path(spec_path).read_text(), parse_constant=_reject_constant)
     errors = validate(spec)
     if errors:
         raise BuildError(errors)
@@ -68,7 +76,7 @@ def main(argv=None):
     except FileNotFoundError:
         print(f"error: spec file not found: {args.spec}", file=sys.stderr)
         return 1
-    except json.JSONDecodeError as exc:
+    except ValueError as exc:  # includes json.JSONDecodeError
         print(f"error: {args.spec} is not valid JSON: {exc}", file=sys.stderr)
         return 1
     except BuildError as exc:

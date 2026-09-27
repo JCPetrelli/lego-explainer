@@ -296,6 +296,9 @@ function setState(next, group = null) {
     : homeTarget.clone();
   closePopup();
   renderControls();
+  const h = hovered;  // label text depends on the state; rebuild it
+  setHover(null);
+  if (h) setHover(h);
 }
 
 let zoomTo = null;
@@ -409,6 +412,9 @@ function setHover(root) {
 function placeHoverLabel() {
   if (!hovered) return;
   const a = anchorOf(hovered);
+  $('hover-label').style.visibility = a.behind ? 'hidden' : '';
+  $('leader').style.visibility = a.behind ? 'hidden' : '';
+  if (a.behind) return;
   const centre = toScreen(modelCentre.clone());
   const label = $('hover-label');
   const w = label.offsetWidth, h = label.offsetHeight;
@@ -446,6 +452,7 @@ function closePopup() {
 function placePopup() {
   if (!popupPiece) return;
   const a = anchorOf(popupPiece);
+  if (a.behind) { closePopup(); return; }
   const pop = $('popup');
   const w = pop.offsetWidth, h = pop.offsetHeight;
   const right = a.x < window.innerWidth / 2;
@@ -496,6 +503,7 @@ function placeGroupLabels() {
     const off = groupOffset.get(g.id).clone();
     const extraLift = state === 3 && g.id === selectedGroup ? 3.5 : 0;
     const s = toScreen(new THREE.Vector3(c.x, groupTop.get(g.id) + 0.8 + extraLift, c.z).add(off));
+    if (s.behind) { el.hidden = true; continue; }
     el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
     el.style.opacity = state === 3 && g.id !== selectedGroup ? 0.45 : 1;
   }

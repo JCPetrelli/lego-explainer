@@ -149,3 +149,54 @@ def test_bad_types_do_not_crash():
     assert validate({}) != []
     assert validate([]) != []
     assert validate({"groups": "x", "pieces": None}) != []
+
+
+def test_non_string_values_do_not_crash():
+    for mutate in (
+        lambda s: s.update(mode=[]),
+        lambda s: s["groups"][0].update(color={}),
+        lambda s: piece(s, "roof").update(id=["a"]),
+        lambda s: piece(s, "roof").update(group=["a"]),
+        lambda s: piece(s, "roof").update(color=["a"]),
+    ):
+        s = base_spec()
+        mutate(s)
+        assert validate(s) != []
+
+
+def test_unknown_keys_rejected():
+    s = base_spec()
+    s["colour"] = "red"
+    s["groups"][0]["colour"] = "red"
+    piece(s, "roof")["colour"] = "red"
+    errs = validate(s)
+    assert sum("unknown field 'colour'" in e for e in errs) == 3
+
+
+def test_nothing_rests_on_a_tile():
+    s = base_spec()
+    piece(s, "floor").update(shape="tile", complexity=1, w=1, d=2, level=0)
+    piece(s, "roof").update(complexity=2, w=1, d=2, level=1)
+    assert any("floating" in e and "roof" in e for e in validate(s))
+
+
+def test_slope_supports_only_its_back_row():
+    s = base_spec()
+    piece(s, "floor").update(shape="slope", complexity=3, w=2, d=4)
+    piece(s, "roof").update(z=2, level=3, w=2, d=2)  # sits on the slanted face
+    assert any("floating" in e and "roof" in e for e in validate(s))
+    piece(s, "roof").update(z=0, w=1, d=2)  # half on the stud row: fine
+    piece(s, "roof")["w"] = 2
+    assert validate(s) == []
+
+
+def test_overlap_keeps_registering_cells():
+    s = base_spec()
+    # 'mid' overlaps 'floor' at z=0..3 and also covers z=4..5; 'late' overlaps mid at z=5.
+    s["pieces"].append({"id": "mid", "group": "base", "title": "M", "description": "x",
+                        "complexity": 3, "shape": "plate", "x": 0, "z": 2, "level": 0, "w": 2, "d": 4})
+    s["pieces"].append({"id": "late", "group": "base", "title": "L", "description": "x",
+                        "complexity": 2, "shape": "plate", "x": 0, "z": 5, "level": 0, "w": 2, "d": 1})
+    errs = validate(s)
+    assert any("'late' overlaps 'mid'" in e for e in errs)
+    assert sum("'mid' overlaps 'floor'" in e for e in errs) == 1

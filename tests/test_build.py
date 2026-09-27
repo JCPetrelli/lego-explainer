@@ -107,3 +107,18 @@ def test_cli_bad_json_exits_1(tmp_path, capsys):
 def test_cli_missing_file_exits_1(tmp_path, capsys):
     assert build_mod.main([str(tmp_path / "nope.json"), "--out", str(tmp_path / "b")]) == 1
     assert "not found" in capsys.readouterr().err
+
+
+def test_html_comment_script_sequence_cannot_escape():
+    spec = base_spec()
+    spec["pieces"][0]["description"] = "<!-- <script> & more >"
+    block = embedded_json(render_html(spec))
+    assert "<" not in block and ">" not in block and "&" not in block
+    assert json.loads(block)["pieces"][0]["description"] == "<!-- <script> & more >"
+
+
+def test_cli_rejects_nan(tmp_path, capsys):
+    bad = tmp_path / "nan.json"
+    bad.write_text(json.dumps(base_spec()).replace('"a topic"', "NaN"))
+    assert build_mod.main([str(bad), "--out", str(tmp_path / "b")]) == 1
+    assert "not valid JSON" in capsys.readouterr().err

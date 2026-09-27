@@ -8,10 +8,14 @@ from .schema import (
     MODES,
     PALETTE,
     SHAPE_HEIGHT,
+    STUDLESS,
 )
 
 INT_FIELDS = ("x", "z", "level", "w", "d", "complexity")
-TEXT_FIELDS = ("id", "group", "title", "description", "shape")
+SPEC_KEYS = {"title", "target", "mode", "metaphor", "groups", "pieces"}
+GROUP_KEYS = {"id", "title", "description", "color"}
+PIECE_KEYS = {"id", "group", "title", "description", "complexity", "shape",
+              "x", "z", "level", "w", "d", "color"}
 
 
 def cells(piece):
@@ -27,6 +31,16 @@ def cells(piece):
 
 def _is_int(value):
     return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _in(value, allowed):
+    """Membership test that tolerates unhashable JSON values (lists, objects)."""
+    return isinstance(value, str) and value in allowed
+
+
+def _check_keys(label, obj, allowed, errors):
+    for key in sorted(set(obj) - allowed):
+        errors.append(f"{label}: unknown field {key!r}")
 
 
 def _check_text(label, obj, field, errors):
@@ -51,13 +65,14 @@ def _check_groups(groups, errors):
             errors.append(f"group #{i}: must be an object")
             continue
         label = f"group '{g.get('id', f'#{i}')}'"
+        _check_keys(label, g, GROUP_KEYS, errors)
         if _check_text(label, g, "id", errors):
             if g["id"] in ids:
                 errors.append(f"duplicate group id '{g['id']}'")
             ids.append(g["id"])
         _check_text(label, g, "title", errors)
         _check_description(label, g, errors)
-        if g.get("color") not in PALETTE:
+        if not _in(g.get("color"), PALETTE):
             errors.append(f"{label}: unknown color {g.get('color')!r}")
     return set(ids)
 
@@ -65,6 +80,7 @@ def _check_groups(groups, errors):
 def _check_piece(p, group_ids, errors):
     """Field-level checks. Returns True when the piece is sound enough for geometry checks."""
     label = f"piece '{p.get('id', '?')}'"
+    _check_keys(label, p, PIECE_KEYS, errors)
     ok = True
     for field in ("id", "group", "title", "shape"):
         ok &= _check_text(label, p, field, errors)
@@ -83,7 +99,7 @@ def _check_piece(p, group_ids, errors):
 
     if isinstance(p.get("group"), str) and p["group"] not in group_ids:
         errors.append(f"{label}: unknown group '{p['group']}'")
-    if "color" in p and p["color"] not in PALETTE:
+    if "color" in p and not _in(p["color"], PALETTE):
         errors.append(f"{label}: unknown color {p['color']!r}")
     if isinstance(p.get("shape"), str) and p["shape"] not in SHAPE_HEIGHT:
         errors.append(f"{label}: unknown shape '{p['shape']}'")
@@ -113,28 +129,41 @@ def _check_piece(p, group_ids, errors):
     return ok
 
 
+def _supports(owner, x, z):
+    """Whether cell (x, z) on top of piece `owner` can hold a brick: tiles have no studs,
+    and a slope has studs only on its back row."""
+    if owner["shape"] in STUDLESS:
+        return False
+    if owner["shape"] == "slope" and owner["d"] > 1:
+        return z == owner["z"]
+    return True
+
+
 def _check_geometry(pieces, errors):
     owner = {}
+    clashes = {}
     for p in pieces:
         for cell in sorted(cells(p)):
             other = owner.get(cell)
-            if other is not None and other != p["id"]:
-                x, z, lv = cell
-                errors.append(f"piece '{p['id']}' overlaps '{other}' at x={x} z={z} level={lv}")
-                break
-            owner[cell] = p["id"]
+            if other is None:
+                owner[cell] = p
+            elif other is not p:
+                clashes.setdefault((p["id"], other["id"]), cell)
+    for (pid, oid), (x, z, lv) in clashes.items():
+        errors.append(f"piece '{pid}' overlaps '{oid}' at x={x} z={z} level={lv}")
     for p in pieces:
         if p["level"] == 0:
             continue
-        below = [
-            owner.get((x, z, p["level"] - 1))
-            for x in range(p["x"], p["x"] + p["w"])
-            for z in range(p["z"], p["z"] + p["d"])
-        ]
-        if not any(o is not None and o != p["id"] for o in below):
+        supported = False
+        for x in range(p["x"], p["x"] + p["w"]):
+            for z in range(p["z"], p["z"] + p["d"]):
+                below = owner.get((x, z, p["level"] - 1))
+                if below is not None and below is not p and _supports(below, x, z):
+                    supported = True
+        if not supported:
             errors.append(
-                f"piece '{p['id']}' is floating: nothing under it at "
-                f"x={p['x']} z={p['z']} level={p['level']}"
+                f"piece '{p['id']}' is floating: nothing with studs under it at "
+                f"x={p['x']} z={p['z']} level={p['level']} (tiles and slope faces do not hold bricks)"
             )
 
 
@@ -143,9 +172,10 @@ def validate(spec):
     if not isinstance(spec, dict):
         return ["spec must be a JSON object"]
     errors = []
+    _check_keys("spec", spec, SPEC_KEYS, errors)
     for field in ("title", "metaphor"):
         _check_text("spec", spec, field, errors)
-    if spec.get("mode") not in MODES:
+    if not _in(spec.get("mode"), MODES):
         errors.append(f"spec: mode must be one of {sorted(MODES)}, got {spec.get('mode')!r}")
 
     groups = spec.get("groups")
@@ -168,13 +198,14 @@ def validate(spec):
             errors.append(f"piece #{i}: must be an object")
             continue
         pid = p.get("id")
-        if isinstance(pid, str) and pid in seen:
-            errors.append(f"duplicate piece id '{pid}'")
-        seen.add(pid)
+        if isinstance(pid, str):
+            if pid in seen:
+                errors.append(f"duplicate piece id '{pid}'")
+            seen.add(pid)
         if _check_piece(p, group_ids, errors):
             sound.append(p)
 
-    used = {p.get("group") for p in pieces if isinstance(p, dict)}
+    used = {p["group"] for p in pieces if isinstance(p, dict) and isinstance(p.get("group"), str)}
     for gid in sorted(group_ids - used):
         errors.append(f"group '{gid}' has no pieces")
 
