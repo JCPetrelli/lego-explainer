@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    --scene-bg: #ece8de;
+    --panel: rgba(255, 255, 255, 0.92);
+    --ink: #1b2a34;
+    --muted: #5f625c;
+    --line: #1b2a34;
+    --accent: #c91a09;
+    --btn: #1b2a34;
+    --btn-ink: #ffffff;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --scene-bg: #17191d;
+      --panel: rgba(34, 37, 43, 0.94);
+      --ink: #eceae4;
+      --muted: #a3a59f;
+      --line: #f4f4f4;
+      --accent: #f2cd37;
+      --btn: #f2cd37;
+      --btn-ink: #1b2a34;
+      --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --scene-bg: #17191d; --panel: rgba(34, 37, 43, 0.94); --ink: #eceae4; --muted: #a3a59f;
+    --line: #f4f4f4; --accent: #f2cd37; --btn: #f2cd37; --btn-ink: #1b2a34;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--scene-bg); color: var(--ink);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  .panel { background: var(--panel); border-radius: 12px; box-shadow: var(--shadow);
+           backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #hud { position: fixed; top: 16px; left: 16px; max-width: min(420px, calc(100vw - 32px)); padding: 14px 16px; }
+  #hud h1 { font-size: 18px; margin: 0 0 6px; line-height: 1.25; }
+  #mode { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+          color: var(--btn-ink); background: var(--accent); border-radius: 4px; padding: 2px 7px; }
+  #metaphor { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  #legend { position: fixed; top: 16px; right: 16px; padding: 12px 14px; font-size: 13px; max-width: 220px; }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  #legend .note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+              display: flex; align-items: center; gap: 10px; padding: 8px; flex-wrap: wrap; justify-content: center;
+              max-width: calc(100vw - 32px); }
+  #controls button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer;
+                     background: var(--btn); color: var(--btn-ink); }
+  #controls button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  #hint { color: var(--muted); font-size: 13px; padding: 0 6px; }
+  #hint:empty { display: none; }
+  #leader { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+  #leader line { stroke: var(--line); stroke-width: 1.5; }
+  #leader circle { fill: var(--line); }
+  #hover-label { position: fixed; left: 0; top: 0; pointer-events: none; padding: 6px 10px; font-size: 13px;
+                 white-space: nowrap; }
+  #hover-label .grp { color: var(--muted); }
+  .group-label { position: fixed; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none;
+                 font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px;
+                 border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); transition: opacity .3s; }
+  #popup { position: fixed; left: 0; top: 0; width: 280px; max-width: calc(100vw - 32px); padding: 14px 16px 16px; }
+  #popup h2 { margin: 0 24px 4px 0; font-size: 16px; line-height: 1.25; }
+  #popup .meta { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  #popup .dots { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
+  #popup p { margin: 0; }
+  #popup .close { position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--muted);
+                  font-size: 18px; cursor: pointer; line-height: 1; }
+  #load-error { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    #legend { top: auto; bottom: 84px; right: 16px; }
+    #hud h1 { font-size: 16px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<header id="hud" class="panel">
+  <h1 id="title"></h1>
+  <span id="mode"></span>
+  <p id="metaphor"></p>
+</header>
+<aside id="legend" class="panel"></aside>
+<div id="group-labels"></div>
+<svg id="leader" hidden><line></line><circle r="3.5"></circle></svg>
+<div id="hover-label" class="panel" hidden></div>
+<div id="popup" class="panel" hidden role="dialog">
+  <button class="close" aria-label="Close">&times;</button>
+  <h2></h2>
+  <div class="meta"><span class="dots"></span><span class="grp"></span></div>
+  <p></p>
+</div>
+<nav id="controls" class="panel">
+  <span id="hint"></span>
+  <button id="btn-back" class="secondary" hidden>Back</button>
+  <button id="btn-main">Explode</button>
+</nav>
+<div id="load-error" hidden>
+  <div class="panel" style="padding:20px 24px;max-width:420px">
+    <strong>The 3D viewer could not start.</strong>
+    <p id="load-error-msg">three.js did not load from cdn.jsdelivr.net. Check the internet connection and reload.</p>
+  </div>
+</div>
+<script type="application/json" id="lego-spec">/*__SPEC_JSON__*/</script>
+<script>
+  setTimeout(function () {
+    if (!window.__legoReady) document.getElementById("load-error").hidden = false;
+  }, 6000);
+</script>
+<script type="module">
+/*__VIEWER_JS__*/
+</script>
+</body>
+</html>

@@ -11,3 +11,9 @@ build SPEC:
 
 test:
     python3 -m pytest -q
+
+# Headless-Chrome check of a built page: hover, popup, both explode stages
+smoke HTML PIECE:
+    cd tests/smoke && [ -d node_modules ] || npm install --silent
+    mkdir -p tests/smoke/shots
+    node tests/smoke/smoke.mjs "$(realpath {{HTML}})" tests/smoke/shots/shot {{PIECE}}

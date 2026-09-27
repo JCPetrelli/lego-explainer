@@ -1,3 +1,5 @@
 __pycache__/
 .pytest_cache/
 builds/
+node_modules/
+tests/smoke/shots/
