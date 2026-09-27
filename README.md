@@ -6,6 +6,9 @@ Each concept is a brick, and related bricks form a sub-assembly. The finished mo
 
 ![Clicking a brick opens its explanation](docs/images/popup.jpg)
 
+**Live demos:** [Web Request Lifecycle](LIVE_DEMO_URL_WEB_REQUEST) · [LEGO Explainer Internals](LIVE_DEMO_URL_INTERNALS) · [Theory of Relativity](LIVE_DEMO_URL_RELATIVITY)
+<!-- TODO before publishing: replace the three LIVE_DEMO_URL_* placeholders with public links (claude.ai Artifacts shared publicly, or GitHub Pages URLs, see "Host the examples"). -->
+
 ## What you get
 
 One self-contained HTML page per explanation, about 40 KB, that runs in any modern browser:
@@ -32,13 +35,22 @@ Claude chooses between two kinds of model:
 
 Download any of them and open it in a browser, or browse `examples/index.html`. The specs they were built from sit next to them as `.json` files.
 
+**Host the examples** (optional). Every page is a single static file, so any static host works. On GitHub Pages:
+1. Open **Settings → Pages** and set the source to **Deploy from a branch**, branch `main`, folder `/ (root)`.
+2. The gallery is then at `https://<user>.github.io/lego-explainer/examples/`, and each page at `…/examples/relativity.html` and so on.
+
 | Hover a brick | Take one group apart |
 |---|---|
 | ![Hover label with leader line](docs/images/hover.jpg) | ![General relativity group taken apart, others faded](docs/images/group.jpg) |
 
 ## Install
 
-Requirements: Claude Code, `python3` 3.10 or later (standard library only), and a browser with WebGL. The first time a page opens it downloads three.js from cdn.jsdelivr.net, so that needs internet.
+Requirements:
+- [Claude Code](https://claude.com/claude-code)
+- `python3` 3.10 or later (standard library only, nothing to pip install)
+- a browser with WebGL; pages load three.js from cdn.jsdelivr.net, so opening one needs internet
+- optional: [`just`](https://github.com/casey/just) for the shortcut commands below (every recipe has a plain-shell equivalent in the `justfile`)
+- optional, for contributors: Node.js and Google Chrome, to run the browser smoke test
 
 **As a plugin** (recommended):
 
@@ -54,6 +66,24 @@ git clone https://github.com/JCPetrelli/lego-explainer.git
 cd lego-explainer
 just install      # or: ln -s "$(pwd)/skills/lego-explainer" ~/.claude/skills/lego-explainer
 ```
+
+Start a new Claude Code session after installing so the skill is picked up.
+
+**Update:**
+
+| Install | Command |
+|---|---|
+| Plugin | `claude plugin update lego-explainer@lego-explainer`, then restart Claude Code |
+| Manual | `git pull` in the clone; the symlink picks up the change |
+
+**Uninstall:**
+
+| Install | Command |
+|---|---|
+| Plugin | `claude plugin uninstall lego-explainer@lego-explainer`, and optionally `claude plugin marketplace remove lego-explainer` |
+| Manual | `rm ~/.claude/skills/lego-explainer` (removes only the symlink), then delete the clone |
+
+Your builds are never deleted by either route. They stay in the builds folder described below.
 
 ## Use
 
@@ -100,6 +130,8 @@ You can also write specs yourself and build them without Claude:
 python3 -m lego_explainer.build my-spec.json --open        # into the builds folder + gallery
 python3 -m lego_explainer.build my-spec.json --html out.html   # just one page
 ```
+
+`--open` uses the macOS `open` command. On Linux or Windows, leave it out and open the printed path in your browser; the same goes for pages Claude builds.
 
 ```json
 {
@@ -175,6 +207,17 @@ python3 -m lego_explainer.build my-spec.json --html out.html   # just one page
 
 **Palette:** red, blue, yellow, green, dark-green, orange, white, light-grey, dark-grey, black, tan, azure.
 
+## Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| "The 3D viewer could not start" after a few seconds | three.js could not be downloaded from cdn.jsdelivr.net. Check the internet connection, or a firewall or ad-blocker blocking jsDelivr, then reload. |
+| "WebGL is not available in this browser" | Hardware acceleration is off or unsupported. Enable it in the browser settings, or try another browser. |
+| Claude answers in text and builds nothing | The skill isn't loaded. Start a new session after installing, check that `~/.claude/skills/lego-explainer` exists (manual) or run `claude plugin list` (plugin), and ask explicitly: "build a LEGO model of …". |
+| `/lego-explainer` is not recognised after a plugin install | Plugin skills are namespaced: use `/lego-explainer:lego-explainer`, or ask in plain words. |
+| The build fails and Claude shows a list of errors | Claude stops after three repair attempts. Ask it to keep fixing, or narrow the target, e.g. one subsystem instead of a whole monorepo. |
+| The page opened from `examples/` on GitHub shows source code | GitHub displays HTML files as code. Download the file, or host the examples as described under Examples. |
+
 ## Repository layout
 
 ```
@@ -195,7 +238,7 @@ just examples                               # rebuild examples/*.html and exampl
 just smoke examples/relativity.html gps     # hover, click, explode in headless Chrome
 ```
 
-`just smoke` installs `puppeteer-core` into `tests/smoke/` on first run and drives your local Chrome. Set `CHROME_PATH` outside macOS. See [CONTRIBUTING.md](CONTRIBUTING.md) before changing the spec format or the viewer.
+These use `just`; without it, run the matching lines from the `justfile` directly. `just smoke` needs Node.js: it installs `puppeteer-core` into `tests/smoke/` on first run and drives your local Chrome. Set `CHROME_PATH` outside macOS. See [CONTRIBUTING.md](CONTRIBUTING.md) before changing the spec format or the viewer.
 
 ## License
 
