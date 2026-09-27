@@ -6,8 +6,7 @@ Each concept is a brick, and related bricks form a sub-assembly. The finished mo
 
 ![Clicking a brick opens its explanation](docs/images/popup.jpg)
 
-**Live demos:** [Web Request Lifecycle](LIVE_DEMO_URL_WEB_REQUEST) · [LEGO Explainer Internals](LIVE_DEMO_URL_INTERNALS) · [Theory of Relativity](LIVE_DEMO_URL_RELATIVITY)
-<!-- TODO before publishing: replace the three LIVE_DEMO_URL_* placeholders with public links (claude.ai Artifacts shared publicly, or GitHub Pages URLs, see "Host the examples"). -->
+**Live demos:** [Web Request Lifecycle](https://jcpetrelli.github.io/lego-explainer/examples/web-request.html) · [LEGO Explainer Internals](https://jcpetrelli.github.io/lego-explainer/examples/lego-explainer.html) · [Theory of Relativity](https://jcpetrelli.github.io/lego-explainer/examples/relativity.html) · [all examples](https://jcpetrelli.github.io/lego-explainer/examples/)
 
 ## What you get
 
