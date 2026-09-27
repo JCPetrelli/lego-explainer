@@ -4,7 +4,7 @@ from pathlib import Path
 
 from lego_explainer.validate import cells, validate
 
-SAMPLES = sorted((Path(__file__).parent.parent / "samples").glob("*.json"))
+SAMPLES = sorted((Path(__file__).parent.parent / "examples").glob("*.json"))
 
 
 def base_spec():
@@ -39,7 +39,7 @@ def test_valid_spec_has_no_errors():
 
 
 def test_samples_exist_and_are_valid():
-    assert SAMPLES, "samples/ must contain example specs"
+    assert SAMPLES, "examples/ must contain example specs"
     for f in SAMPLES:
         assert validate(json.loads(f.read_text())) == [], f.name
 

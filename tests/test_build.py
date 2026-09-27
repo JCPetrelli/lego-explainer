@@ -122,3 +122,32 @@ def test_cli_rejects_nan(tmp_path, capsys):
     bad.write_text(json.dumps(base_spec()).replace('"a topic"', "NaN"))
     assert build_mod.main([str(bad), "--out", str(tmp_path / "b")]) == 1
     assert "not valid JSON" in capsys.readouterr().err
+
+
+def test_default_builds_dir_env_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("LEGO_EXPLAINER_BUILDS", str(tmp_path / "mine"))
+    assert build_mod.default_builds_dir() == tmp_path / "mine"
+
+
+def test_default_builds_dir_clone_vs_install(tmp_path, monkeypatch):
+    monkeypatch.delenv("LEGO_EXPLAINER_BUILDS", raising=False)
+    monkeypatch.setattr(build_mod, "ROOT", tmp_path)
+    monkeypatch.setattr(build_mod.Path, "home", classmethod(lambda cls: tmp_path / "home"))
+    assert build_mod.default_builds_dir() == tmp_path / "home" / "lego-explainer-builds"
+    (tmp_path / ".git").mkdir()
+    assert build_mod.default_builds_dir() == tmp_path / "builds"
+
+
+def test_cli_html_writes_single_page_without_gallery(tmp_path, capsys):
+    out = tmp_path / "page.html"
+    assert build_mod.main([str(spec_file(tmp_path)), "--html", str(out)]) == 0
+    assert "__lego" in out.read_text()
+    assert not (tmp_path / "index.html").exists()
+
+
+def test_gallery_omits_date_for_undated_files(tmp_path):
+    from lego_explainer.gallery import write_gallery
+    (tmp_path / "relativity.json").write_text(json.dumps(base_spec()))
+    (tmp_path / "relativity.html").write_text("x")
+    index = write_gallery(tmp_path).read_text()
+    assert "relativity &middot;" not in index and "stack &middot; 2 pieces" in index

@@ -1,10 +1,11 @@
 // Headless-Chrome smoke test for a built viewer page.
 // Usage: node smoke.mjs <build.html> <screenshot-prefix> <piece-id>
+// Set CHROME_PATH on Linux/Windows (defaults to the macOS Google Chrome location).
 
 import puppeteer from 'puppeteer-core';
 const [,, file, shotPrefix, pieceId] = process.argv;
 const browser = await puppeteer.launch({
-  executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  executablePath: process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   headless: 'new', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--window-size=1400,900'],
   defaultViewport: { width: 1400, height: 900 },
 });

@@ -1,3 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEGO Explainer Internals</title>
+<style>
+  :root {
+    --scene-bg: #ece8de;
+    --panel: rgba(255, 255, 255, 0.92);
+    --ink: #1b2a34;
+    --muted: #5f625c;
+    --line: #1b2a34;
+    --accent: #c91a09;
+    --btn: #1b2a34;
+    --btn-ink: #ffffff;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --scene-bg: #17191d;
+      --panel: rgba(34, 37, 43, 0.94);
+      --ink: #eceae4;
+      --muted: #a3a59f;
+      --line: #f4f4f4;
+      --accent: #f2cd37;
+      --btn: #f2cd37;
+      --btn-ink: #1b2a34;
+      --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --scene-bg: #17191d; --panel: rgba(34, 37, 43, 0.94); --ink: #eceae4; --muted: #a3a59f;
+    --line: #f4f4f4; --accent: #f2cd37; --btn: #f2cd37; --btn-ink: #1b2a34;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--scene-bg); color: var(--ink);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  .panel { background: var(--panel); border-radius: 12px; box-shadow: var(--shadow);
+           backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #hud { position: fixed; top: 16px; left: 16px; max-width: min(420px, calc(100vw - 32px)); padding: 14px 16px; }
+  #hud h1 { font-size: 18px; margin: 0 0 6px; line-height: 1.25; }
+  #mode { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+          color: var(--btn-ink); background: var(--accent); border-radius: 4px; padding: 2px 7px; }
+  #metaphor { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  #legend { position: fixed; top: 16px; right: 16px; padding: 12px 14px; font-size: 13px; max-width: 220px; }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  #legend .note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+              display: flex; align-items: center; gap: 10px; padding: 8px; flex-wrap: wrap; justify-content: center;
+              max-width: calc(100vw - 32px); }
+  #controls button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer;
+                     background: var(--btn); color: var(--btn-ink); }
+  #controls button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  #hint { color: var(--muted); font-size: 13px; padding: 0 6px; }
+  #hint:empty { display: none; }
+  #leader { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+  #leader line { stroke: var(--line); stroke-width: 1.5; }
+  #leader circle { fill: var(--line); }
+  #hover-label { position: fixed; left: 0; top: 0; pointer-events: none; padding: 6px 10px; font-size: 13px;
+                 white-space: nowrap; }
+  #hover-label .grp { color: var(--muted); }
+  .group-label { position: fixed; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none;
+                 font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px;
+                 border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); transition: opacity .3s; }
+  #popup { position: fixed; left: 0; top: 0; width: 360px; max-width: calc(100vw - 32px);
+           max-height: calc(100vh - 32px); overflow-y: auto; padding: 14px 16px 16px; }
+  #popup h2 { margin: 0 24px 4px 0; font-size: 16px; line-height: 1.25; }
+  #popup .meta { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  #popup .dots { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
+  #popup p { margin: 0; }
+  #popup .lead { font-weight: 700; margin-bottom: 10px; }
+  #popup .details { color: var(--ink); opacity: .9; }
+  #popup .example { margin-top: 12px; padding: 9px 11px; border-radius: 8px; border-left: 3px solid var(--accent);
+                    background: rgba(127, 127, 127, .12); font-size: 13px; }
+  #popup .example-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+                          text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  #popup .close { position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--muted);
+                  font-size: 18px; cursor: pointer; line-height: 1; }
+  #load-error { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    #legend { top: auto; bottom: 84px; right: 16px; }
+    #hud h1 { font-size: 16px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<header id="hud" class="panel">
+  <h1 id="title"></h1>
+  <span id="mode"></span>
+  <p id="metaphor"></p>
+</header>
+<aside id="legend" class="panel"></aside>
+<div id="group-labels"></div>
+<svg id="leader" hidden><line></line><circle r="3.5"></circle></svg>
+<div id="hover-label" class="panel" hidden></div>
+<div id="popup" class="panel" hidden role="dialog">
+  <button class="close" aria-label="Close">&times;</button>
+  <h2></h2>
+  <div class="meta"><span class="dots"></span><span class="grp"></span></div>
+  <p class="lead"></p>
+  <p class="details"></p>
+  <div class="example"><span class="example-label">Example</span><p></p></div>
+</div>
+<nav id="controls" class="panel">
+  <span id="hint"></span>
+  <button id="btn-back" class="secondary" hidden>Back</button>
+  <button id="btn-main">Explode</button>
+</nav>
+<div id="load-error" hidden>
+  <div class="panel" style="padding:20px 24px;max-width:420px">
+    <strong>The 3D viewer could not start.</strong>
+    <p id="load-error-msg">three.js did not load from cdn.jsdelivr.net. Check the internet connection and reload.</p>
+  </div>
+</div>
+<script type="application/json" id="lego-spec">{"title": "LEGO Explainer Internals", "target": "the lego-explainer repository", "mode": "stack", "metaphor": "Stack: runtimes at the bottom, the Python engine and the 3D viewer on top of them, and Claude's workflow at the top, driving both.", "groups": [{"id": "runtime", "title": "Runtimes", "description": "What everything runs on: Python to build pages, three.js in the browser to draw them.", "color": "dark-grey"}, {"id": "engine", "title": "Engine", "description": "Python package. Checks a build spec, turns it into one HTML page, keeps the gallery.", "color": "blue"}, {"id": "viewer", "title": "Viewer", "description": "Fixed three.js page. Draws the bricks and handles orbit, explode, hover and popups.", "color": "red"}, {"id": "workflow", "title": "Claude's workflow", "description": "The skill. Steps Claude follows to turn any target into a valid build spec.", "color": "yellow"}], "pieces": [{"id": "python", "group": "runtime", "title": "Python 3.12", "description": "Stdlib only. Runs the validator and the builder.", "details": "The build side uses only the Python standard library (json, argparse, pathlib, html), so there is nothing to pip install. Any Python 3.10 or later works; the code was developed on 3.12.", "example": "python3 -m lego_explainer.build spec.json runs with a fresh interpreter, no virtualenv.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 0, "w": 4, "d": 4}, {"id": "threejs", "group": "runtime", "title": "three.js", "description": "WebGL library. Meshes, lights, shadows, mouse orbit.", "details": "three.js draws the model in the browser. It provides the rounded brick bodies, extruded slopes, soft shadows, and OrbitControls, which gives drag to orbit, scroll to zoom and right-drag to pan. The page pins version 0.160 through an import map.", "example": "Dragging left moves the camera around the model; the bricks themselves never move.", "complexity": 4, "shape": "brick", "x": 4, "z": 0, "level": 0, "w": 4, "d": 4}, {"id": "cdn", "group": "runtime", "title": "jsDelivr CDN", "description": "Serves three.js when the page opens.", "details": "three.js is not bundled into the page. The browser fetches it from cdn.jsdelivr.net, which keeps each build around 40 KB. The first open needs internet; if the download fails, the page shows an error after 6 seconds instead of a blank screen.", "example": "Opening a build with Wi-Fi off shows 'The 3D viewer could not start'.", "complexity": 1, "shape": "plate", "x": 8, "z": 0, "level": 0, "w": 1, "d": 2, "color": "azure"}, {"id": "schema", "group": "engine", "title": "schema.py", "description": "The shared vocabulary: palette, shapes, size rules.", "details": "One module holds the rules everything else agrees on: 12 LEGO colours, the height of each shape in plates, word limits, and the table that ties complexity to brick footprint. The viewer keeps a copy of the palette, so change both together.", "example": "Complexity 3 allows a 6 to 8 stud footprint: a 2x4 brick fits, a 2x2 does not.", "complexity": 2, "shape": "brick", "x": 0, "z": 0, "level": 3, "w": 2, "d": 2}, {"id": "build", "group": "engine", "title": "build.py", "description": "CLI: validate, render, write, refresh gallery.", "details": "The entry point. It reads the spec (rejecting malformed JSON and NaN), runs the validator, and injects the spec and viewer code into one self-contained HTML file. The spec is escaped so text in it can never break the page. Errors come back as a list with exit code 1.", "example": "Building the same spec twice on one day overwrites the page instead of adding a duplicate.", "complexity": 2, "shape": "brick", "x": 0, "z": 2, "level": 3, "w": 2, "d": 2}, {"id": "validate", "group": "engine", "title": "validate.py", "description": "Rejects impossible or sloppy builds, all errors at once.", "details": "Checks run in two passes. First every field: types, unknown keys, word limits, and the complexity-to-size rule. Then geometry on a cell grid: no two bricks may share a cell, and every raised brick needs studs under it. Tiles and slope faces have no studs.", "example": "A brick placed on a tile is reported as 'floating', with its coordinates.", "complexity": 3, "shape": "brick", "x": 2, "z": 0, "level": 3, "w": 2, "d": 4}, {"id": "gallery", "group": "engine", "title": "gallery.py", "description": "Index page: one card per build, newest first.", "details": "After every build it regenerates index.html from the saved specs, showing title, date, mode and piece count. Builds go to $LEGO_EXPLAINER_BUILDS if set, otherwise to builds/ in a clone, otherwise to ~/lego-explainer-builds.", "example": "just run serves the gallery at localhost:5733.", "complexity": 1, "shape": "plate", "x": 0, "z": 0, "level": 6, "w": 1, "d": 2}, {"id": "scene", "group": "viewer", "title": "Scene", "description": "Turns stud coordinates into 3D bricks on a baseplate.", "details": "One stud is one unit and a plate is 0.4 units tall. Each piece becomes a rounded box or a slope with studs on top, placed from its corner coordinates on a grey baseplate sized to fit the model. One sun light casts soft shadows.", "example": "A 2x4 brick at level 3 becomes a 2 x 1.2 x 4 box resting 1.2 units up.", "complexity": 4, "shape": "brick", "x": 4, "z": 0, "level": 3, "w": 4, "d": 3}, {"id": "explode", "group": "viewer", "title": "Explode", "description": "Three states: assembled, groups apart, one group apart.", "details": "A small state machine animates every brick for 0.6 seconds between states. Groups rise in proportion to their height and move outward in proportion to their position. A final pass pushes apart any groups whose boxes still collide. Taking one group apart fades the others.", "example": "Press E, click the Engine group, then press Esc to go back.", "complexity": 2, "shape": "brick", "x": 4, "z": 3, "level": 3, "w": 2, "d": 1}, {"id": "hover", "group": "viewer", "title": "Hover \u0026 popup", "description": "Pointer picking, leader-line labels, detail cards.", "details": "Each frame a ray from the mouse finds the brick underneath. It gets an outline and a line to its title, placed on the side away from the model. Clicking opens this card: bold summary, details, and an example. Overlays hide when their brick is behind the camera.", "example": "The card you are reading was opened this way.", "complexity": 2, "shape": "slope", "x": 6, "z": 3, "level": 3, "w": 2, "d": 1}, {"id": "understand", "group": "workflow", "title": "Understand target", "description": "Read the code or topic until the concepts are clear.", "details": "For a path, Claude reads the README and entry points and maps modules and dependencies, delegating to a search agent for large repos. For a topic, it uses its own knowledge plus web search when the topic is recent. Too-big targets get a top-level build and offers to zoom in.", "example": "Pointing it at a monorepo gives one build of the services, then an offer to build each one.", "complexity": 3, "shape": "brick", "x": 2, "z": 0, "level": 6, "w": 3, "d": 2}, {"id": "decompose", "group": "workflow", "title": "Decompose \u0026 score", "description": "4 to 8 groups, 2 to 6 pieces each, complexity 1 to 5.", "details": "Claude splits the target into sub-assemblies and single concepts a reader should leave knowing. Each concept gets an honest complexity score, and that score decides the brick's size. A trivial helper becomes a 1x1 plate; the core engine becomes a large brick.", "example": "In a web app, the router scores 1 (a tile) and the database scores 4 (a 4x4 brick).", "complexity": 3, "shape": "brick", "x": 2, "z": 2, "level": 6, "w": 3, "d": 2}, {"id": "mode", "group": "workflow", "title": "Choose mode", "description": "Themed object if the metaphor fits, stack otherwise.", "details": "A themed model (train, castle, house) is used only when every group maps to a recognisable part of one object. Otherwise it falls back to a stack, where height means dependency. The reason goes into the one-line metaphor in the header.", "example": "An HTTP request becomes a train; this repository is a stack.", "complexity": 1, "shape": "plate", "x": 3, "z": 2, "level": 9, "w": 1, "d": 2}, {"id": "layout", "group": "workflow", "title": "Lay out bricks", "description": "Place every piece on the stud grid so it makes sense.", "details": "The hardest step. Claude picks x, z and level for each piece. In a stack, foundations go at the bottom and dependents sit on what they depend on. In a themed model, parts go where they belong on the object. The two examples in the repo are the reference patterns.", "example": "Here, Claude's workflow sits on top of both the engine and the viewer, because it drives both.", "complexity": 4, "shape": "brick", "x": 5, "z": 0, "level": 6, "w": 3, "d": 4}, {"id": "text", "group": "workflow", "title": "Write text", "description": "Title, bold summary, details, one example.", "details": "Every piece gets a 1–3 word title, a summary of at most 40 words shown in bold, details of at most 120 words for a newcomer, and a concrete example of at most 60 words. The rule is no hedging and no marketing words.", "example": "This card's layout is the result.", "complexity": 2, "shape": "brick", "x": 5, "z": 0, "level": 9, "w": 1, "d": 2}, {"id": "fix", "group": "workflow", "title": "Build \u0026 fix", "description": "Run the builder, fix the reported errors, three tries.", "details": "Claude writes the spec, runs the builder, and reads the error list. Errors name the piece and the exact cell, so fixes are mechanical. After three failed attempts it stops and shows the remaining errors rather than forcing a broken build.", "example": "piece 'db' overlaps 'cache' at x=0 z=9 level=1 leads to moving the cache one stud over.", "complexity": 2, "shape": "brick", "x": 7, "z": 2, "level": 9, "w": 1, "d": 2}, {"id": "examples", "group": "workflow", "title": "Examples", "description": "Reference builds Claude reads before laying out.", "details": "The examples folder holds hand-made specs that pass validation: a themed train, this stack, and a physics topic. The tests use them as fixtures and the smoke test drives them in a real browser.", "example": "examples/web-request.json shows how to lay a train along the z axis.", "complexity": 1, "shape": "tile", "x": 2, "z": 0, "level": 9, "w": 1, "d": 2}]}</script>
+<script>
+  setTimeout(function () {
+    if (!window.__legoReady) document.getElementById("load-error").hidden = false;
+  }, 6000);
+</script>
+<script type="module">
 // LEGO Explainer viewer: renders a validated build spec as an explorable LEGO model.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -570,3 +706,7 @@ window.__lego = {
   },
 };
 window.__legoReady = true;
+
+</script>
+</body>
+</html>

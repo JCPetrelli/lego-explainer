@@ -1,7 +1,7 @@
 # LEGO Explainer — Design
 
 Date: 2026-09-27
-Status: approved in brainstorming, pending written-spec review
+Status: original design, approved 2026-09-27. The README is the current reference; later additions are marked inline.
 
 ## Purpose
 
@@ -22,24 +22,22 @@ Success: opening a build gives a correct, memorable mental model of the target i
 ## Layout
 
 ```
-~/.claude/skills/lego-explainer/SKILL.md      global skill: workflow + rules for Claude
-~/Documents/Scripts/lego_explainer/           engine (git repo)
-├── viewer/            viewer.html template, viewer.js (three.js via CDN)
-├── lego_explainer/    schema.py, validate.py, build.py, gallery.py
-├── samples/           themed.json, stack.json (fixtures + examples for Claude)
-├── tests/
-├── justfile           `just run` serves/opens the gallery
-└── builds/            <YYYY-MM-DD>-<slug>.json + .html, index.html
+skills/lego-explainer/SKILL.md   the skill: workflow + rules for Claude
+lego_explainer/                  schema.py, validate.py, build.py, gallery.py
+viewer/                          viewer.html template, viewer.js (three.js via CDN)
+examples/                        example specs + built pages (fixtures and references)
+tests/                           pytest suite, smoke/ headless-Chrome check
+.claude-plugin/                  plugin + marketplace manifests
 ```
 
-The skill stays thin; all logic lives in the engine. The engine is registered in `jc_secretary/repos.md`.
+The skill stays thin; all logic lives in the engine. *(Originally the skill lived in `~/.claude/skills/` and the samples in `samples/`; both moved into the repo for public release.)*
 
 ## Build spec
 
 ```json
 {
   "title": "home_guard architecture",
-  "target": "~/Documents/Scripts/home_guard",
+  "target": "~/code/home_guard",
   "mode": "themed",
   "metaphor": "A castle: the gate checks who enters, the walls watch traffic.",
   "groups": [
@@ -121,7 +119,7 @@ Invocation: `/lego-explainer <path or topic> [publish]`.
 1. **Understand the target.** Path → explore entry points, modules, dependencies (Explore agent for large repos). Topic → own knowledge, plus web research if recent/niche.
 2. **Decompose** into 4–8 groups × 2–6 pieces; score each piece's complexity 1–5.
 3. **Choose mode.** Themed only if every group maps to a recognisable part of one object; else stack. Record the reason in `metaphor`.
-4. **Lay out.** Stack: foundations (runtime, storage) on the baseplate, layers upward, dependents touching what they depend on. Themed: parts where they belong on the object. Consult `samples/` for patterns.
+4. **Lay out.** Stack: foundations (runtime, storage) on the baseplate, layers upward, dependents touching what they depend on. Themed: parts where they belong on the object. Consult `examples/` for patterns.
 5. **Write spec, run build.** On validator errors, fix and rerun, max 3 attempts; then stop and show the errors.
 6. **Report.** Open the HTML; report path, mode + reason, piece count. If `publish` was requested, publish the HTML as a private Artifact and return the link.
 

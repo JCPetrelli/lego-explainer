@@ -3,6 +3,7 @@
 import argparse
 import html
 import json
+import os
 import re
 import subprocess
 import sys
@@ -14,7 +15,17 @@ from .validate import validate
 
 ROOT = Path(__file__).resolve().parent.parent
 VIEWER_DIR = ROOT / "viewer"
-BUILDS_DIR = ROOT / "builds"
+
+
+def default_builds_dir():
+    """$LEGO_EXPLAINER_BUILDS, else builds/ inside a git clone, else ~/lego-explainer-builds
+    (a plugin install lives in a cache directory that is replaced on update)."""
+    env = os.environ.get("LEGO_EXPLAINER_BUILDS")
+    if env:
+        return Path(env).expanduser()
+    if (ROOT / ".git").exists():
+        return ROOT / "builds"
+    return Path.home() / "lego-explainer-builds"
 
 
 class BuildError(Exception):
@@ -48,13 +59,19 @@ def render_html(spec):
     return page.replace("/*__SPEC_JSON__*/", spec_json, 1)
 
 
-def build(spec_path, builds_dir=BUILDS_DIR, today=None):
-    """Validate the spec at spec_path and write <date>-<slug>.html/.json. Returns the HTML path."""
+def load_spec(spec_path):
+    """Read and validate a spec file. Raises BuildError listing every problem."""
     spec = json.loads(Path(spec_path).read_text(), parse_constant=_reject_constant)
     errors = validate(spec)
     if errors:
         raise BuildError(errors)
-    builds_dir = Path(builds_dir)
+    return spec
+
+
+def build(spec_path, builds_dir=None, today=None):
+    """Validate the spec at spec_path and write <date>-<slug>.html/.json. Returns the HTML path."""
+    spec = load_spec(spec_path)
+    builds_dir = Path(builds_dir) if builds_dir else default_builds_dir()
     builds_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{(today or date.today()).isoformat()}-{slugify(spec['title'])}"
     html_path = builds_dir / f"{stem}.html"
@@ -67,12 +84,19 @@ def build(spec_path, builds_dir=BUILDS_DIR, today=None):
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Validate a LEGO build spec and render it.")
     parser.add_argument("spec", type=Path)
-    parser.add_argument("--out", type=Path, default=BUILDS_DIR, help="builds directory")
+    parser.add_argument("--out", type=Path, help="builds directory (default: see default_builds_dir)")
+    parser.add_argument("--html", type=Path,
+                        help="write just this one HTML file: no JSON copy, no gallery")
     parser.add_argument("--open", action="store_true", help="open the result in the browser")
     args = parser.parse_args(argv)
 
     try:
-        html_path = build(args.spec, args.out)
+        if args.html:
+            args.html.parent.mkdir(parents=True, exist_ok=True)
+            args.html.write_text(render_html(load_spec(args.spec)))
+            html_path = args.html
+        else:
+            html_path = build(args.spec, args.out)
     except FileNotFoundError:
         print(f"error: spec file not found: {args.spec}", file=sys.stderr)
         return 1

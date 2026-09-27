@@ -1,0 +1,10 @@
+{
+  "name": "lego-explainer",
+  "description": "Explain any codebase or topic as an interactive 3D LEGO model: brick size = complexity, two-stage explode, hover labels, detail popups.",
+  "version": "1.0.0",
+  "author": { "name": "Jacopo Castellano" },
+  "homepage": "https://github.com/JCPetrelli/lego-explainer",
+  "repository": "https://github.com/JCPetrelli/lego-explainer",
+  "license": "MIT",
+  "keywords": ["skill", "visualization", "three.js", "architecture", "explainer", "lego"]
+}

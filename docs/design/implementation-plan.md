@@ -8,7 +8,9 @@
 
 **Tech Stack:** Python 3.12 stdlib + pytest; three.js 0.160 (ES modules via cdn.jsdelivr.net importmap); just.
 
-**Spec:** `docs/specs/2026-09-27-lego-explainer-design.md`
+**Spec:** `docs/design/design-spec.md`
+
+> Historical record of the first implementation. Paths and names reflect that moment (`samples/` is now `examples/`).
 
 ## Global Constraints
 
@@ -132,7 +134,7 @@ Units: 1 stud = 1.0, plate = 0.4, stud r 0.3 h 0.18. Model centred on the origin
 
 ### Task 6: Samples, smoke test, skill, registration
 
-**Files:** `samples/stack.json` (lego_explainer's own architecture), `samples/themed.json` (a web request as a train), `~/.claude/skills/lego-explainer/SKILL.md`, `README.md`, update `jc_secretary/repos.md`.
+**Files:** `samples/stack.json` (lego_explainer's own architecture), `samples/themed.json` (a web request as a train), `~/.claude/skills/lego-explainer/SKILL.md`, `README.md`.
 
 - [ ] Both samples pass `validate` (already covered by the Task 2 test).
 - [ ] Smoke test in Chrome via DevTools MCP: load the themed build; no console errors; `__lego.screenPos` → dispatch pointermove → label visible; dispatch click → popup visible; `setState(2)`, then click a group → state 3; no NaN positions.

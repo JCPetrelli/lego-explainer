@@ -2,6 +2,7 @@
 
 import html
 import json
+import re
 from pathlib import Path
 
 PAGE = """<!doctype html>
@@ -42,7 +43,7 @@ PAGE = """<!doctype html>
 
 CARD = """<a class="card" href="{href}">
   <h2>{title}</h2>
-  <div class="meta">{date} &middot; {mode} &middot; {pieces} pieces</div>
+  <div class="meta">{meta}</div>
 </a>"""
 
 
@@ -57,12 +58,13 @@ def write_gallery(builds_dir):
             spec = json.loads(spec_path.read_text())
         except (json.JSONDecodeError, OSError):
             continue
+        meta = [html.escape(str(spec.get("mode", "?"))), f"{len(spec.get('pieces', []))} pieces"]
+        if re.match(r"\d{4}-\d{2}-\d{2}-", spec_path.stem):
+            meta.insert(0, spec_path.stem[:10])
         cards.append(CARD.format(
             href=html.escape(html_path.name),
             title=html.escape(str(spec.get("title", html_path.stem))),
-            date=spec_path.stem[:10],
-            mode=html.escape(str(spec.get("mode", "?"))),
-            pieces=len(spec.get("pieces", [])),
+            meta=" &middot; ".join(meta),
         ))
     body = "\n".join(cards) or '<p class="empty">No builds yet.</p>'
     index = builds_dir / "index.html"

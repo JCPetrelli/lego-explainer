@@ -1,3 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Request Lifecycle</title>
+<style>
+  :root {
+    --scene-bg: #ece8de;
+    --panel: rgba(255, 255, 255, 0.92);
+    --ink: #1b2a34;
+    --muted: #5f625c;
+    --line: #1b2a34;
+    --accent: #c91a09;
+    --btn: #1b2a34;
+    --btn-ink: #ffffff;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --scene-bg: #17191d;
+      --panel: rgba(34, 37, 43, 0.94);
+      --ink: #eceae4;
+      --muted: #a3a59f;
+      --line: #f4f4f4;
+      --accent: #f2cd37;
+      --btn: #f2cd37;
+      --btn-ink: #1b2a34;
+      --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --scene-bg: #17191d; --panel: rgba(34, 37, 43, 0.94); --ink: #eceae4; --muted: #a3a59f;
+    --line: #f4f4f4; --accent: #f2cd37; --btn: #f2cd37; --btn-ink: #1b2a34;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--scene-bg); color: var(--ink);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  .panel { background: var(--panel); border-radius: 12px; box-shadow: var(--shadow);
+           backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #hud { position: fixed; top: 16px; left: 16px; max-width: min(420px, calc(100vw - 32px)); padding: 14px 16px; }
+  #hud h1 { font-size: 18px; margin: 0 0 6px; line-height: 1.25; }
+  #mode { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+          color: var(--btn-ink); background: var(--accent); border-radius: 4px; padding: 2px 7px; }
+  #metaphor { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  #legend { position: fixed; top: 16px; right: 16px; padding: 12px 14px; font-size: 13px; max-width: 220px; }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  #legend .note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+              display: flex; align-items: center; gap: 10px; padding: 8px; flex-wrap: wrap; justify-content: center;
+              max-width: calc(100vw - 32px); }
+  #controls button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer;
+                     background: var(--btn); color: var(--btn-ink); }
+  #controls button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  #hint { color: var(--muted); font-size: 13px; padding: 0 6px; }
+  #hint:empty { display: none; }
+  #leader { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+  #leader line { stroke: var(--line); stroke-width: 1.5; }
+  #leader circle { fill: var(--line); }
+  #hover-label { position: fixed; left: 0; top: 0; pointer-events: none; padding: 6px 10px; font-size: 13px;
+                 white-space: nowrap; }
+  #hover-label .grp { color: var(--muted); }
+  .group-label { position: fixed; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none;
+                 font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px;
+                 border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); transition: opacity .3s; }
+  #popup { position: fixed; left: 0; top: 0; width: 360px; max-width: calc(100vw - 32px);
+           max-height: calc(100vh - 32px); overflow-y: auto; padding: 14px 16px 16px; }
+  #popup h2 { margin: 0 24px 4px 0; font-size: 16px; line-height: 1.25; }
+  #popup .meta { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  #popup .dots { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
+  #popup p { margin: 0; }
+  #popup .lead { font-weight: 700; margin-bottom: 10px; }
+  #popup .details { color: var(--ink); opacity: .9; }
+  #popup .example { margin-top: 12px; padding: 9px 11px; border-radius: 8px; border-left: 3px solid var(--accent);
+                    background: rgba(127, 127, 127, .12); font-size: 13px; }
+  #popup .example-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+                          text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  #popup .close { position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--muted);
+                  font-size: 18px; cursor: pointer; line-height: 1; }
+  #load-error { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    #legend { top: auto; bottom: 84px; right: 16px; }
+    #hud h1 { font-size: 16px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<header id="hud" class="panel">
+  <h1 id="title"></h1>
+  <span id="mode"></span>
+  <p id="metaphor"></p>
+</header>
+<aside id="legend" class="panel"></aside>
+<div id="group-labels"></div>
+<svg id="leader" hidden><line></line><circle r="3.5"></circle></svg>
+<div id="hover-label" class="panel" hidden></div>
+<div id="popup" class="panel" hidden role="dialog">
+  <button class="close" aria-label="Close">&times;</button>
+  <h2></h2>
+  <div class="meta"><span class="dots"></span><span class="grp"></span></div>
+  <p class="lead"></p>
+  <p class="details"></p>
+  <div class="example"><span class="example-label">Example</span><p></p></div>
+</div>
+<nav id="controls" class="panel">
+  <span id="hint"></span>
+  <button id="btn-back" class="secondary" hidden>Back</button>
+  <button id="btn-main">Explode</button>
+</nav>
+<div id="load-error" hidden>
+  <div class="panel" style="padding:20px 24px;max-width:420px">
+    <strong>The 3D viewer could not start.</strong>
+    <p id="load-error-msg">three.js did not load from cdn.jsdelivr.net. Check the internet connection and reload.</p>
+  </div>
+</div>
+<script type="application/json" id="lego-spec">{"title": "Web Request Lifecycle", "target": "HTTP request lifecycle", "mode": "themed", "metaphor": "Train: the browser locomotive pulls the request through the network, server and data wagons, in order.", "groups": [{"id": "browser", "title": "Browser", "description": "Locomotive. Starts the trip: turns a URL into an HTTP request, renders the answer.", "color": "red"}, {"id": "network", "title": "Network", "description": "First wagon. Finds the server and opens a secure channel to it.", "color": "blue"}, {"id": "server", "title": "Server", "description": "Second wagon. Receives the request, runs application code, builds the response.", "color": "green"}, {"id": "data", "title": "Data", "description": "Last wagon. Stores and returns the facts the app needs.", "color": "yellow"}], "pieces": [{"id": "engine", "group": "browser", "title": "Browser engine", "description": "Parses HTML, CSS, JS. Manages tabs, cache, cookies. Largest single piece of client software.", "complexity": 5, "shape": "plate", "x": 0, "z": 18, "level": 0, "w": 4, "d": 6, "details": "The browser is a large program with many parts. It parses HTML into a tree, applies CSS, runs JavaScript, and keeps a cache, cookies and open connections. Everything the user sees or sends passes through it.", "example": "Chrome, Firefox and Safari are browser engines. Each one runs the same page slightly differently."}, {"id": "render", "group": "browser", "title": "Rendering", "description": "Lays out the page and paints pixels once the response arrives.", "complexity": 4, "shape": "brick", "x": 0, "z": 18, "level": 1, "w": 4, "d": 3, "details": "Once the response arrives, the browser builds the page tree, computes styles, works out where every box goes (layout), then paints pixels. Changing layout late, for example when images load without a size, makes the page jump.", "example": "A slow page can show the text first and the images a moment later."}, {"id": "url", "group": "browser", "title": "URL entry", "description": "User types an address. Browser splits it into scheme, host, path.", "complexity": 3, "shape": "slope", "x": 0, "z": 21, "level": 1, "w": 4, "d": 2, "details": "Typing an address starts the whole trip. The browser splits it into scheme (https), host (example.com), path (/cart) and query (?id=7). The host decides which server to contact. The path and query tell that server what is wanted.", "example": "https://shop.example.com/cart?id=7 goes to host shop.example.com and asks for /cart."}, {"id": "request", "group": "browser", "title": "HTTP request", "description": "Method, path, headers, optional body. The cargo of the whole trip.", "complexity": 2, "shape": "brick", "x": 1, "z": 19, "level": 4, "w": 1, "d": 2, "color": "white", "details": "The message the browser sends. It holds a method (GET to read, POST to send data), the path, headers such as cookies, language and accepted formats, and sometimes a body. The rest of the train exists to deliver it and bring back an answer.", "example": "GET /cart HTTP/1.1, Host: shop.example.com, Cookie: session=abc"}, {"id": "tcp", "group": "network", "title": "TCP connection", "description": "Reliable byte stream between client and server. Three-way handshake, then ordered delivery.", "complexity": 4, "shape": "plate", "x": 0, "z": 12, "level": 0, "w": 4, "d": 4, "details": "TCP gives a reliable two-way pipe over an unreliable network. A three-way handshake (SYN, SYN-ACK, ACK) opens it. Lost packets are resent and bytes arrive in order. Browsers reuse the connection for later requests to save the setup time.", "example": "Like a phone call: you connect once, then talk back and forth."}, {"id": "dns", "group": "network", "title": "DNS lookup", "description": "Turns the host name into an IP address. Usually cached.", "complexity": 2, "shape": "brick", "x": 0, "z": 12, "level": 1, "w": 2, "d": 2, "details": "Computers find each other by IP address, not by name. DNS asks a chain of servers who owns the name and returns the address. The answer is cached in the browser, the OS and the router, so most lookups take almost no time.", "example": "shop.example.com resolves to 93.184.216.34."}, {"id": "tls", "group": "network", "title": "TLS handshake", "description": "Verifies the server certificate, agrees keys. Everything after is encrypted.", "complexity": 3, "shape": "brick", "x": 2, "z": 12, "level": 1, "w": 2, "d": 4, "color": "azure", "details": "Before any HTTP data flows, the client and server agree on encryption keys. The server shows a certificate signed by an authority the browser already trusts. From then on nobody in between can read or change the traffic. This is the padlock icon.", "example": "An expired certificate makes the browser show a full-page security warning."}, {"id": "lb", "group": "server", "title": "Load balancer", "description": "Picks one of many app servers for this request. Spreads load, hides failures.", "complexity": 4, "shape": "plate", "x": 0, "z": 6, "level": 0, "w": 4, "d": 4, "details": "Big sites run many identical app servers. The load balancer receives every request and forwards it to a healthy one, spreading traffic and skipping servers that fail health checks. It often handles TLS too, so app servers see plain HTTP.", "example": "When one of ten servers crashes, users are sent to the other nine without noticing."}, {"id": "app", "group": "server", "title": "App server", "description": "Runs your code: auth, business logic, templates. Returns status, headers, body.", "complexity": 4, "shape": "brick", "x": 0, "z": 6, "level": 1, "w": 4, "d": 3, "color": "dark-green", "details": "Your own code runs here. It checks who the user is, runs the business rules, reads or writes data, and builds the response: a status code, headers and a body in HTML or JSON. Most bugs and most of the work live here.", "example": "Loading /cart: find the session, load the cart items, compute the total, return a page."}, {"id": "cache", "group": "server", "title": "Cache", "description": "Keeps recent answers in memory. Skips the database when it can.", "complexity": 2, "shape": "brick", "x": 0, "z": 9, "level": 1, "w": 2, "d": 1, "details": "A fast in-memory store, such as Redis, for answers that are expensive to compute or fetch. The app checks the cache first and only goes to the database on a miss. The hard part is removing stale entries when the data changes.", "example": "The product list is cached for 60 seconds, so 1,000 visitors cost one database query."}, {"id": "router", "group": "server", "title": "Router", "description": "Maps the path to a handler function.", "complexity": 1, "shape": "tile", "x": 1, "z": 7, "level": 4, "w": 2, "d": 1, "details": "Maps the incoming method and path to the function that handles it. The route patterns can capture parts of the path as parameters.", "example": "GET /products/42 calls show_product(id=42)."}, {"id": "query", "group": "data", "title": "Query layer", "description": "ORM or SQL. Translates app questions into database queries.", "complexity": 4, "shape": "plate", "x": 0, "z": 0, "level": 0, "w": 4, "d": 4, "details": "Translates what the app wants into SQL, either by hand or through an ORM that turns objects into queries. It also manages the pool of open database connections. Careless code here causes the classic N+1 problem: one query per item instead of one query in total.", "example": "Cart.items becomes SELECT * FROM cart_items WHERE cart_id = 7."}, {"id": "db", "group": "data", "title": "Database", "description": "Durable storage. Transactions, indexes, replication. Slowest hop, so it is cached.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 1, "w": 4, "d": 4, "color": "orange", "details": "The durable store of truth. It writes data safely to disk, runs transactions so that related changes all happen or none do, and is often replicated to other machines. It is usually the slowest hop, which is why caches and indexes exist.", "example": "Moving money between two accounts is one transaction: the debit and the credit both happen or neither does."}, {"id": "index", "group": "data", "title": "Index", "description": "Sorted lookup structure. Turns a full scan into a quick seek.", "complexity": 1, "shape": "tile", "x": 1, "z": 1, "level": 4, "w": 1, "d": 2, "details": "A sorted side structure, usually a B-tree, over one or more columns. It lets the database jump straight to matching rows instead of reading the whole table. Reads get faster and writes get a little slower.", "example": "An index on email turns a login lookup across 10 million users from seconds into milliseconds."}]}</script>
+<script>
+  setTimeout(function () {
+    if (!window.__legoReady) document.getElementById("load-error").hidden = false;
+  }, 6000);
+</script>
+<script type="module">
 // LEGO Explainer viewer: renders a validated build spec as an explorable LEGO model.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -570,3 +706,7 @@ window.__lego = {
   },
 };
 window.__legoReady = true;
+
+</script>
+</body>
+</html>

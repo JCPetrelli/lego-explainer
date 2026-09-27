@@ -4,15 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Engine behind the global `lego-explainer` skill, whose instructions live **outside this repo** at `~/.claude/skills/lego-explainer/SKILL.md`. Claude writes a JSON build spec, `lego_explainer.build` validates it and injects it into a fixed three.js viewer, and the output is a self-contained page in `builds/` (git-ignored). The design spec is at `docs/specs/2026-09-27-lego-explainer-design.md`. If you change a spec rule, update the spec, `SKILL.md` and `README.md` together.
+A Claude Code skill plus its engine, meant for public release (MIT). The skill is `skills/lego-explainer/SKILL.md`, and it is distributed two ways:
+- as a plugin via `.claude-plugin/plugin.json` and `marketplace.json`
+- by symlink with `just install`
+
+The skill finds the engine as two directories above its real (symlink-resolved) `SKILL.md`, so never hardcode machine paths in it. Claude writes a JSON build spec, and `lego_explainer.build` validates it and injects it into a fixed three.js viewer. The result is one self-contained page.
+
+Spec-format changes touch six places; the list is in `CONTRIBUTING.md`. The original design is in `docs/design/`.
 
 ## Commands
 
 ```bash
 just test                                        # python3 -m pytest -q (stdlib only, no venv)
 python3 -m pytest tests/test_validate.py::test_floating_reported -q   # single test
-python3 -m lego_explainer.build samples/themed.json --open            # validate + build + open
-just run                                         # serve builds/ gallery on :5733
+python3 -m lego_explainer.build examples/web-request.json --open       # validate + build into builds folder
+just examples                                    # rebuild committed examples/*.html + examples/index.html
+just run                                         # serve the builds gallery on :5733
 just smoke builds/<file>.html <piece-id>         # headless Chrome check; npm-installs puppeteer-core on first run
 ```
 
@@ -30,7 +37,7 @@ just smoke builds/<file>.html <piece-id>         # headless Chrome check; npm-in
 
 It returns *all* errors as strings, because the skill's fix-and-rerun loop is limited to 3 attempts. Every membership test goes through `_in()`, since JSON values may be unhashable lists or dicts. Unknown keys are rejected via `SPEC_KEYS`, `GROUP_KEYS` and `PIECE_KEYS`: add new fields there.
 
-**Builder (`build.py`).**
+**Builder (`build.py`).** `default_builds_dir()` resolves in this order: `$LEGO_EXPLAINER_BUILDS`, then `builds/` if the engine root has `.git`, then `~/lego-explainer-builds`. The last case exists because plugin caches are replaced on update. `--html PATH` writes a single page with no gallery; that is how `examples/` is built.
 - `render_html` replaces the markers in `viewer/viewer.html`: `__TITLE__` (HTML-escaped), `/*__VIEWER_JS__*/` (the inlined `viewer.js`), and `/*__SPEC_JSON__*/`. The viewer is inserted before the spec, one occurrence each, so text inside a spec can't be mistaken for a marker.
 - The spec JSON has `<`, `>` and `&` escaped as `<` and so on, and NaN is rejected both on load (`parse_constant`) and on dump (`allow_nan=False`).
 - Output is `builds/<date>-<slug>.html` plus a `.json` copy. `gallery.py` regenerates `index.html` from those JSON copies.
@@ -48,9 +55,9 @@ It returns *all* errors as strings, because the skill's fix-and-rerun loop is li
 - `window.__lego` (`state`, `setState`, `screenPos(id)`, `positionsFinite()`) is the test hook used by `tests/smoke/smoke.mjs`. Keep it stable.
 - An inline non-module script shows `#load-error` if `window.__legoReady` isn't set within 6 s, which covers a CDN or WebGL failure.
 
-## Samples
+## Examples
 
-`samples/stack.json` and `samples/themed.json` are three things at once:
+`examples/*.json` are three things at once:
 - test fixtures (`test_samples_exist_and_are_valid`)
 - the layout references the skill tells Claude to read
 - the smoke-test targets

@@ -1,5 +1,5 @@
 {
-  "title": "How a web request is served",
+  "title": "Web Request Lifecycle",
   "target": "HTTP request lifecycle",
   "mode": "themed",
   "metaphor": "Train: the browser locomotive pulls the request through the network, server and data wagons, in order.",

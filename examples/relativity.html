@@ -1,3 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theory of Relativity</title>
+<style>
+  :root {
+    --scene-bg: #ece8de;
+    --panel: rgba(255, 255, 255, 0.92);
+    --ink: #1b2a34;
+    --muted: #5f625c;
+    --line: #1b2a34;
+    --accent: #c91a09;
+    --btn: #1b2a34;
+    --btn-ink: #ffffff;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --scene-bg: #17191d;
+      --panel: rgba(34, 37, 43, 0.94);
+      --ink: #eceae4;
+      --muted: #a3a59f;
+      --line: #f4f4f4;
+      --accent: #f2cd37;
+      --btn: #f2cd37;
+      --btn-ink: #1b2a34;
+      --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --scene-bg: #17191d; --panel: rgba(34, 37, 43, 0.94); --ink: #eceae4; --muted: #a3a59f;
+    --line: #f4f4f4; --accent: #f2cd37; --btn: #f2cd37; --btn-ink: #1b2a34;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: var(--scene-bg); color: var(--ink);
+         font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+  .panel { background: var(--panel); border-radius: 12px; box-shadow: var(--shadow);
+           backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #hud { position: fixed; top: 16px; left: 16px; max-width: min(420px, calc(100vw - 32px)); padding: 14px 16px; }
+  #hud h1 { font-size: 18px; margin: 0 0 6px; line-height: 1.25; }
+  #mode { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+          color: var(--btn-ink); background: var(--accent); border-radius: 4px; padding: 2px 7px; }
+  #metaphor { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+  #legend { position: fixed; top: 16px; right: 16px; padding: 12px 14px; font-size: 13px; max-width: 220px; }
+  #legend .row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+  #legend .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+  #legend .note { margin-top: 8px; color: var(--muted); font-size: 12px; }
+  #controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+              display: flex; align-items: center; gap: 10px; padding: 8px; flex-wrap: wrap; justify-content: center;
+              max-width: calc(100vw - 32px); }
+  #controls button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer;
+                     background: var(--btn); color: var(--btn-ink); }
+  #controls button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+  #hint { color: var(--muted); font-size: 13px; padding: 0 6px; }
+  #hint:empty { display: none; }
+  #leader { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; overflow: visible; }
+  #leader line { stroke: var(--line); stroke-width: 1.5; }
+  #leader circle { fill: var(--line); }
+  #hover-label { position: fixed; left: 0; top: 0; pointer-events: none; padding: 6px 10px; font-size: 13px;
+                 white-space: nowrap; }
+  #hover-label .grp { color: var(--muted); }
+  .group-label { position: fixed; left: 0; top: 0; transform: translate(-50%, -100%); pointer-events: none;
+                 font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px;
+                 border-radius: 6px; background: var(--panel); box-shadow: var(--shadow); transition: opacity .3s; }
+  #popup { position: fixed; left: 0; top: 0; width: 360px; max-width: calc(100vw - 32px);
+           max-height: calc(100vh - 32px); overflow-y: auto; padding: 14px 16px 16px; }
+  #popup h2 { margin: 0 24px 4px 0; font-size: 16px; line-height: 1.25; }
+  #popup .meta { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  #popup .dots { color: var(--accent); letter-spacing: 1px; font-size: 13px; }
+  #popup p { margin: 0; }
+  #popup .lead { font-weight: 700; margin-bottom: 10px; }
+  #popup .details { color: var(--ink); opacity: .9; }
+  #popup .example { margin-top: 12px; padding: 9px 11px; border-radius: 8px; border-left: 3px solid var(--accent);
+                    background: rgba(127, 127, 127, .12); font-size: 13px; }
+  #popup .example-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+                          text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  #popup .close { position: absolute; top: 8px; right: 10px; border: 0; background: none; color: var(--muted);
+                  font-size: 18px; cursor: pointer; line-height: 1; }
+  #load-error { position: fixed; inset: 0; display: grid; place-items: center; padding: 16px; text-align: center; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) {
+    #legend { top: auto; bottom: 84px; right: 16px; }
+    #hud h1 { font-size: 16px; }
+  }
+</style>
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<header id="hud" class="panel">
+  <h1 id="title"></h1>
+  <span id="mode"></span>
+  <p id="metaphor"></p>
+</header>
+<aside id="legend" class="panel"></aside>
+<div id="group-labels"></div>
+<svg id="leader" hidden><line></line><circle r="3.5"></circle></svg>
+<div id="hover-label" class="panel" hidden></div>
+<div id="popup" class="panel" hidden role="dialog">
+  <button class="close" aria-label="Close">&times;</button>
+  <h2></h2>
+  <div class="meta"><span class="dots"></span><span class="grp"></span></div>
+  <p class="lead"></p>
+  <p class="details"></p>
+  <div class="example"><span class="example-label">Example</span><p></p></div>
+</div>
+<nav id="controls" class="panel">
+  <span id="hint"></span>
+  <button id="btn-back" class="secondary" hidden>Back</button>
+  <button id="btn-main">Explode</button>
+</nav>
+<div id="load-error" hidden>
+  <div class="panel" style="padding:20px 24px;max-width:420px">
+    <strong>The 3D viewer could not start.</strong>
+    <p id="load-error-msg">three.js did not load from cdn.jsdelivr.net. Check the internet connection and reload.</p>
+  </div>
+</div>
+<script type="application/json" id="lego-spec">{"title": "Theory of Relativity", "target": "Einstein's special and general relativity", "mode": "stack", "metaphor": "Stack: two postulates at the base, special relativity built on them, spacetime reframing it, general relativity bending that spacetime, experimental evidence on top.", "groups": [{"id": "postulates", "title": "Postulates", "description": "Two assumptions from 1905. Everything else follows from them.", "color": "dark-grey"}, {"id": "special", "title": "Special relativity", "description": "What happens at high speed with no gravity. Time and space depend on the observer.", "color": "blue"}, {"id": "spacetime", "title": "Spacetime", "description": "Minkowski's 1908 reframing: space and time are one four-dimensional geometry.", "color": "azure"}, {"id": "general", "title": "General relativity", "description": "Einstein's 1915 theory of gravity: mass and energy curve spacetime.", "color": "red"}, {"id": "evidence", "title": "Evidence", "description": "Measurements that confirm the theory, from planetary orbits to your phone's GPS.", "color": "yellow"}], "pieces": [{"id": "principle", "group": "postulates", "title": "Principle of relativity", "description": "Physics works the same for every observer moving steadily.", "details": "No experiment inside a closed room moving at constant velocity can tell you whether you are moving. Galileo already said this for mechanics; Einstein extended it to all physics, including light and electromagnetism. There is no absolute rest frame.", "example": "On a smooth train at constant speed, a dropped cup falls straight down, exactly as it would on the platform.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 0, "w": 4, "d": 4}, {"id": "lightspeed", "group": "postulates", "title": "Constant speed of light", "description": "Light moves at c = 299,792 km/s for every observer.", "details": "Light's speed does not add to the speed of its source or of the observer. That contradicts everyday intuition, and it is the source of every strange effect that follows. Since c is fixed, time and distance must adjust instead.", "example": "Chasing a light beam at half light speed, you still measure it passing you at full c.", "complexity": 4, "shape": "brick", "x": 4, "z": 0, "level": 0, "w": 4, "d": 4}, {"id": "simultaneity", "group": "special", "title": "Relativity of simultaneity", "description": "Two events simultaneous for one observer need not be for another.", "details": "Whether two distant events happen 'at the same time' depends on how you are moving. It follows directly from both postulates. It resolves most relativity paradoxes, because observers disagree about which moment counts as 'now' far away.", "example": "Lightning strikes both ends of a moving train. The platform sees the strikes together; the passenger sees the front one first.", "complexity": 3, "shape": "brick", "x": 0, "z": 0, "level": 3, "w": 2, "d": 4}, {"id": "timedilation", "group": "special", "title": "Time dilation", "description": "Moving clocks tick slower, as seen by you.", "details": "A clock moving relative to you runs slow by the Lorentz factor. Each observer sees the other's clock slow, which is consistent because they disagree on simultaneity. The effect is real: particles and atomic clocks confirm it.", "example": "Muons made in the upper atmosphere live 2.2 microseconds, too short to reach the ground, yet they arrive because their clocks run slow.", "complexity": 3, "shape": "brick", "x": 2, "z": 0, "level": 3, "w": 2, "d": 4}, {"id": "contraction", "group": "special", "title": "Length contraction", "description": "Moving objects are shorter along their motion.", "details": "An object moving past you is measured shorter in its direction of travel, by the same Lorentz factor. Its own passengers notice nothing. This is the spatial counterpart of time dilation.", "example": "A spaceship at 87% of light speed is measured at half its rest length.", "complexity": 2, "shape": "brick", "x": 4, "z": 0, "level": 3, "w": 2, "d": 2}, {"id": "lorentz", "group": "special", "title": "Lorentz factor γ", "description": "γ = 1/√(1 − v²/c²). The size of every effect.", "details": "One number sets how strong time dilation, length contraction and relativistic mass-energy are. It is about 1 at everyday speeds and grows without limit as v approaches c. That is why nothing with mass reaches light speed.", "example": "At 87% of c, γ = 2: time runs at half rate and lengths halve.", "complexity": 2, "shape": "brick", "x": 4, "z": 2, "level": 3, "w": 2, "d": 2}, {"id": "emc2", "group": "special", "title": "E = mc²", "description": "Mass is a form of energy, with c² as the exchange rate.", "details": "A body's energy at rest equals its mass times c squared. Because c² is enormous, a little mass holds a huge amount of energy. Nuclear reactions and the Sun's glow convert a small fraction of mass into energy.", "example": "One gram of mass fully converted releases about 21 kilotons of TNT, more than the Hiroshima bomb (about 15).", "complexity": 3, "shape": "brick", "x": 6, "z": 0, "level": 3, "w": 2, "d": 4}, {"id": "minkowski", "group": "spacetime", "title": "Minkowski spacetime", "description": "Space and time as one 4D geometry.", "details": "Minkowski showed that special relativity is simpler as geometry. Events are points in four-dimensional spacetime, and observers moving differently are just using rotated axes. Time dilation and length contraction become ordinary projection effects.", "example": "Like the length of a pencil staying the same while its shadow changes as you rotate it.", "complexity": 4, "shape": "brick", "x": 0, "z": 0, "level": 6, "w": 4, "d": 4}, {"id": "lightcone", "group": "spacetime", "title": "Light cones", "description": "The boundary of what can affect what.", "details": "From any event, light spreads out as a cone in spacetime. Events inside the future cone can be influenced by it and events outside cannot, in any frame. This keeps cause and effect consistent for all observers.", "example": "A supernova 100 light-years away can't affect us until 100 years after it happens.", "complexity": 2, "shape": "brick", "x": 4, "z": 0, "level": 6, "w": 2, "d": 2}, {"id": "interval", "group": "spacetime", "title": "Spacetime interval", "description": "The one distance all observers agree on.", "details": "Observers disagree about time gaps and space gaps between two events, but they agree on a combination of the two, the interval. It plays the role that ordinary distance plays in geometry and is the invariant everything is built on.", "example": "Two observers disagree on how far apart and how long between two flashes, yet compute the same interval.", "complexity": 2, "shape": "brick", "x": 4, "z": 2, "level": 6, "w": 2, "d": 2}, {"id": "equivalence", "group": "general", "title": "Equivalence principle", "description": "Gravity and acceleration feel the same.", "details": "In a small closed room you cannot tell whether you are resting in a gravitational field or accelerating in empty space. Free fall cancels gravity locally. This insight led Einstein to treat gravity as geometry rather than as a force.", "example": "Astronauts on the ISS float because they are falling freely, not because gravity is absent up there.", "complexity": 3, "shape": "brick", "x": 0, "z": 0, "level": 9, "w": 2, "d": 4}, {"id": "curvature", "group": "general", "title": "Curved spacetime", "description": "Mass and energy bend spacetime; bending is gravity.", "details": "Mass and energy curve the geometry of spacetime around them. Objects then follow the straightest possible paths in that curved geometry, which look like orbits and falls. Clocks deeper in a gravitational field also run slower.", "example": "A heavy ball on a trampoline makes a dip that marbles roll into. The analogy is imperfect, but that is the idea.", "complexity": 4, "shape": "brick", "x": 2, "z": 0, "level": 9, "w": 3, "d": 4}, {"id": "field", "group": "general", "title": "Field equations", "description": "Ten equations: how matter curves spacetime.", "details": "Einstein's field equations link the curvature of spacetime (left side) to the energy and momentum of matter (right side). Solving them for a given distribution of mass gives the geometry. They predicted black holes, gravitational waves and the expanding universe.", "example": "Schwarzschild solved them for a single star in 1916, weeks after publication, and found the black-hole solution.", "complexity": 5, "shape": "plate", "x": 0, "z": 0, "level": 12, "w": 6, "d": 4}, {"id": "geodesic", "group": "general", "title": "Geodesics", "description": "Free objects follow the straightest path in curved spacetime.", "details": "A geodesic is the generalisation of a straight line to curved geometry. Planets, falling apples and light rays all follow geodesics. Gravity is not pulling them; the geometry itself curves their paths.", "example": "Flights from Europe to the US arc over Greenland because that is the shortest path on a sphere.", "complexity": 2, "shape": "brick", "x": 0, "z": 0, "level": 13, "w": 2, "d": 2}, {"id": "blackhole", "group": "evidence", "title": "Black holes", "description": "Curvature so strong not even light escapes.", "details": "Compress enough mass into a small region and spacetime curves so steeply that the event horizon becomes a one-way boundary. Predicted from the field equations, they are now observed directly, from orbiting stars to horizon-scale images.", "example": "The 2019 Event Horizon Telescope image showed the shadow of the black hole in galaxy M87.", "complexity": 3, "shape": "slope", "x": 2, "z": 0, "level": 13, "w": 2, "d": 3, "color": "black"}, {"id": "waves", "group": "evidence", "title": "Gravitational waves", "description": "Ripples in spacetime from violent events.", "details": "Accelerating masses send ripples through spacetime at light speed. LIGO measures them as length changes smaller than a proton across 4 km arms. The first detection came from two black holes merging 1.3 billion years ago.", "example": "The signal of 14 September 2015 lasted 0.2 seconds and matched the prediction exactly.", "complexity": 2, "shape": "brick", "x": 4, "z": 0, "level": 13, "w": 1, "d": 2}, {"id": "lensing", "group": "evidence", "title": "Gravitational lensing", "description": "Mass bends light passing near it.", "details": "Light follows geodesics too, so it curves around massive objects. The 1919 solar eclipse measurement of starlight bending near the Sun made Einstein famous. Today, lensing maps dark matter and magnifies distant galaxies.", "example": "Einstein rings are distant galaxies stretched into circles by a galaxy in front of them.", "complexity": 2, "shape": "brick", "x": 5, "z": 0, "level": 13, "w": 1, "d": 2}, {"id": "mercury", "group": "evidence", "title": "Mercury's orbit", "description": "Its slow orbital drift, explained exactly.", "details": "Mercury's orbit rotates by 43 arcseconds per century more than Newton predicts. General relativity accounts for exactly that amount, which was the theory's first success in 1915.", "example": "43 arcseconds per century: Newton gets it wrong, Einstein gets it right.", "complexity": 1, "shape": "tile", "x": 4, "z": 2, "level": 13, "w": 1, "d": 1}, {"id": "gps", "group": "evidence", "title": "GPS clocks", "description": "Satellites correct for both relativity effects daily.", "details": "GPS satellite clocks run 7 microseconds per day slow from their speed (special) and 45 fast from weaker gravity (general), a net +38. Without correcting for this, positions would drift by about 10 km per day.", "example": "Your phone's blue dot is accurate because relativity is built into the satellites.", "complexity": 2, "shape": "brick", "x": 4, "z": 3, "level": 13, "w": 2, "d": 1}]}</script>
+<script>
+  setTimeout(function () {
+    if (!window.__legoReady) document.getElementById("load-error").hidden = false;
+  }, 6000);
+</script>
+<script type="module">
 // LEGO Explainer viewer: renders a validated build spec as an explorable LEGO model.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -570,3 +706,7 @@ window.__lego = {
   },
 };
 window.__legoReady = true;
+
+</script>
+</body>
+</html>

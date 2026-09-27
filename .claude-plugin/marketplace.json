@@ -1,0 +1,14 @@
+{
+  "name": "lego-explainer",
+  "owner": {
+    "name": "Jacopo Castellano"
+  },
+  "description": "The lego-explainer skill: any codebase or topic as an explorable 3D LEGO model.",
+  "plugins": [
+    {
+      "name": "lego-explainer",
+      "source": "./",
+      "description": "Explain any codebase or topic as an interactive 3D LEGO model."
+    }
+  ]
+}
