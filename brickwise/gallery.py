@@ -5,12 +5,15 @@ import json
 import re
 from pathlib import Path
 
+from .meta import head_tags
+
 PAGE = """<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LEGO Explainer Gallery</title>
+<title>{title}</title>
+{head}
 <style>
   :root {{ --bg: #f3f1ea; --card: #fff; --ink: #1b2a34; --muted: #6c6e68; --accent: #c91a09; }}
   @media (prefers-color-scheme: dark) {{
@@ -32,7 +35,7 @@ PAGE = """<!doctype html>
 </head>
 <body>
 <main>
-<h1><span>&#9632;</span> LEGO Explainer builds</h1>
+<h1><span>&#9632;</span> {title}</h1>
 <div class="grid">
 {cards}
 </div>
@@ -47,7 +50,7 @@ CARD = """<a class="card" href="{href}">
 </a>"""
 
 
-def write_gallery(builds_dir):
+def write_gallery(builds_dir, title="Brickwise builds", og_image=None):
     builds_dir = Path(builds_dir)
     cards = []
     for spec_path in sorted(builds_dir.glob("*.json"), reverse=True):
@@ -68,5 +71,6 @@ def write_gallery(builds_dir):
         ))
     body = "\n".join(cards) or '<p class="empty">No builds yet.</p>'
     index = builds_dir / "index.html"
-    index.write_text(PAGE.format(cards=body))
+    head = head_tags(title, "Codebases and topics explained as explorable 3D brick models.", og_image)
+    index.write_text(PAGE.format(cards=body, title=html.escape(title), head=head))
     return index

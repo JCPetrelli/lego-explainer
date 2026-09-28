@@ -3,3 +3,4 @@ __pycache__/
 builds/
 node_modules/
 tests/smoke/shots/
+.DS_Store

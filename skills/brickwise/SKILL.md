@@ -1,11 +1,11 @@
 ---
-name: lego-explainer
-description: Use when the user wants a target explained as an interactive 3D LEGO model — a codebase, subsystem, architecture, pipeline, or any complicated topic. Triggers on "/lego-explainer", "explain X as LEGO", "LEGO model of X", "build me a LEGO of this repo", "lego explain", "show X as bricks". Output is a self-contained HTML page (orbit, two-stage explode, hover labels, click popups) plus a gallery of all builds; optionally published as a shareable claude.ai Artifact.
+name: brickwise
+description: Use when the user wants a target explained as an interactive 3D brick model — a codebase, subsystem, architecture, pipeline, or any complicated topic. Triggers on "/brickwise", "brickwise this", "explain X as bricks", "brick model of X", "build me a brick model of this repo", "show X as bricks", "toy-brick explainer". Output is a self-contained HTML page (orbit, two-stage explode, hover labels, click popups) plus a gallery of all builds; optionally published as a shareable claude.ai Artifact.
 ---
 
-# LEGO Explainer
+# Brickwise
 
-Turn a target into a LEGO build: every concept is a brick, groups of bricks are sub-assemblies, the whole build is the whole topic. **Brick size = complexity.** You write a JSON build spec; the engine validates it and renders it with a fixed, tested viewer. Never hand-write three.js.
+Turn a target into a brick model: every concept is a brick, groups of bricks are sub-assemblies, the whole build is the whole topic. **Brick size = complexity.** You write a JSON build spec; the engine validates it and renders it with a fixed, tested viewer. Never hand-write three.js.
 
 **Engine location.** The engine is the repository this skill ships in: two directories above this `SKILL.md`. Resolve it once, following symlinks, and use it for every command below:
 
@@ -13,9 +13,9 @@ Turn a target into a LEGO build: every concept is a brick, groups of bricks are 
 ENGINE="$(cd "$(dirname "$(realpath "<this skill's base directory>/SKILL.md")")/../.." && pwd)"
 ```
 
-Builds go to `$LEGO_EXPLAINER_BUILDS` if set, otherwise to `builds/` inside a git clone of the engine, otherwise to `~/lego-explainer-builds/`. Each build folder has an `index.html` gallery.
+Builds go to `$BRICKWISE_BUILDS` if set, otherwise to `builds/` inside a git clone of the engine, otherwise to `~/brickwise-builds/`. Each build folder has an `index.html` gallery.
 
-Invocation: `/lego-explainer <path or topic> [publish]`. Requires `python3` (3.10 or later).
+Invocation: `/brickwise <path or topic> [publish]`. Requires `python3` (3.10 or later).
 
 ## Workflow
 
@@ -58,7 +58,7 @@ Invocation: `/lego-explainer <path or topic> [publish]`. Requires `python3` (3.1
 
 8. **Build.** Write the spec to a temporary file (the session scratchpad if there is one), then:
    ```bash
-   cd "$ENGINE" && python3 -m lego_explainer.build <spec.json> --open
+   cd "$ENGINE" && python3 -m brickwise.build <spec.json> --open
    ```
    `--open` uses macOS `open`; on other systems drop it and give the user the printed path.
    Errors come back as a list (`piece 'x' overlaps 'y' at x=… z=… level=…`, `… is floating`, `complexity 3 needs footprint area 6-8`). Fix them all and rerun — **max 3 attempts**, then stop and show the user the remaining errors.
@@ -84,4 +84,4 @@ Limits: ≤ 8 groups, ≤ 40 pieces, every group has pieces, ids unique.
 
 ## Engine maintenance
 
-See `$ENGINE/CONTRIBUTING.md` and `$ENGINE/CLAUDE.md`. Short version: `just test`, `just smoke <page.html> <piece-id>`, and keep the `PALETTE` in `viewer/viewer.js` in sync with `lego_explainer/schema.py`.
+See `$ENGINE/CONTRIBUTING.md` and `$ENGINE/CLAUDE.md`. Short version: `just test`, `just smoke <page.html> <piece-id>`, and keep the `PALETTE` in `viewer/viewer.js` in sync with `brickwise/schema.py`.

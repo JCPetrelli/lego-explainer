@@ -11,6 +11,7 @@ from datetime import date
 from pathlib import Path
 
 from .gallery import write_gallery
+from .meta import check_url, head_tags
 from .validate import validate
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,14 +19,14 @@ VIEWER_DIR = ROOT / "viewer"
 
 
 def default_builds_dir():
-    """$LEGO_EXPLAINER_BUILDS, else builds/ inside a git clone, else ~/lego-explainer-builds
+    """$BRICKWISE_BUILDS, else builds/ inside a git clone, else ~/brickwise-builds
     (a plugin install lives in a cache directory that is replaced on update)."""
-    env = os.environ.get("LEGO_EXPLAINER_BUILDS")
+    env = os.environ.get("BRICKWISE_BUILDS")
     if env:
         return Path(env).expanduser()
     if (ROOT / ".git").exists():
         return ROOT / "builds"
-    return Path.home() / "lego-explainer-builds"
+    return Path.home() / "brickwise-builds"
 
 
 class BuildError(Exception):
@@ -43,14 +44,10 @@ def slugify(text):
     return slug[:60].rstrip("-") or "build"
 
 
-def check_source_link(url):
-    if url and not re.match(r"https?://", url):
-        raise ValueError(f"source link must start with http:// or https://, got {url!r}")
-
-
-def render_html(spec, source_link=None):
-    """Page HTML for a validated spec. source_link adds a "GitHub" button pointing at it."""
-    check_source_link(source_link)
+def render_html(spec, source_link=None, og_image=None):
+    """Page HTML for a validated spec. source_link adds a "GitHub" button pointing at it;
+    og_image (absolute URL) gives link previews a picture."""
+    check_url(source_link, "source link")
     template = (VIEWER_DIR / "viewer.html").read_text()
     viewer_js = (VIEWER_DIR / "viewer.js").read_text()
     # No raw < > & inside the <script> block: "</script>" or "<!--" in a description
@@ -63,6 +60,7 @@ def render_html(spec, source_link=None):
     # spec can never be mistaken for a template marker.
     page = template.replace("__TITLE__", html.escape(spec["title"]))
     page = page.replace("__SOURCE_LINK__", html.escape(source_link or ""), 1)
+    page = page.replace("__HEAD_META__", head_tags(spec["title"], spec["metaphor"], og_image), 1)
     page = page.replace("/*__VIEWER_JS__*/", viewer_js, 1)
     return page.replace("/*__SPEC_JSON__*/", spec_json, 1)
 
@@ -76,21 +74,21 @@ def load_spec(spec_path):
     return spec
 
 
-def build(spec_path, builds_dir=None, today=None, source_link=None):
+def build(spec_path, builds_dir=None, today=None, source_link=None, og_image=None):
     """Validate the spec at spec_path and write <date>-<slug>.html/.json. Returns the HTML path."""
     spec = load_spec(spec_path)
     builds_dir = Path(builds_dir) if builds_dir else default_builds_dir()
     builds_dir.mkdir(parents=True, exist_ok=True)
     stem = f"{(today or date.today()).isoformat()}-{slugify(spec['title'])}"
     html_path = builds_dir / f"{stem}.html"
-    html_path.write_text(render_html(spec, source_link))
+    html_path.write_text(render_html(spec, source_link, og_image))
     (builds_dir / f"{stem}.json").write_text(json.dumps(spec, indent=2, ensure_ascii=False))
     write_gallery(builds_dir)
     return html_path
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Validate a LEGO build spec and render it.")
+    parser = argparse.ArgumentParser(description="Validate a Brickwise build spec and render it.")
     parser.add_argument("spec", type=Path)
     parser.add_argument("--out", type=Path, help="builds directory (default: see default_builds_dir)")
     parser.add_argument("--html", type=Path,
@@ -98,10 +96,13 @@ def main(argv=None):
     parser.add_argument("--open", action="store_true", help="open the result in the browser")
     parser.add_argument("--source-link", metavar="URL",
                         help="show a GitHub button linking to URL (used for the published examples)")
+    parser.add_argument("--og-image", metavar="URL",
+                        help="absolute image URL for link previews (LinkedIn, Slack, ...)")
     args = parser.parse_args(argv)
 
     try:
-        check_source_link(args.source_link)
+        check_url(args.source_link, "source link")
+        check_url(args.og_image, "og image")
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -109,10 +110,10 @@ def main(argv=None):
     try:
         if args.html:
             args.html.parent.mkdir(parents=True, exist_ok=True)
-            args.html.write_text(render_html(load_spec(args.spec), args.source_link))
+            args.html.write_text(render_html(load_spec(args.spec), args.source_link, args.og_image))
             html_path = args.html
         else:
-            html_path = build(args.spec, args.out, source_link=args.source_link)
+            html_path = build(args.spec, args.out, source_link=args.source_link, og_image=args.og_image)
     except FileNotFoundError:
         print(f"error: spec file not found: {args.spec}", file=sys.stderr)
         return 1

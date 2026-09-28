@@ -5,7 +5,7 @@ Issues and pull requests are welcome.
 ## Setup
 
 ```bash
-git clone https://github.com/JCPetrelli/lego-explainer.git && cd lego-explainer
+git clone https://github.com/JCPetrelli/brickwise.git && cd brickwise
 just install    # symlink the skill into ~/.claude/skills so Claude Code uses your checkout
 just test
 ```
@@ -22,10 +22,10 @@ Python uses only the standard library. The smoke test needs Node.js and a local 
 
 A rule lives in several places. Change them together:
 
-1. `lego_explainer/schema.py`: constants such as the palette, shape heights, the complexity table and word limits.
-2. `lego_explainer/validate.py`: `SPEC_KEYS`, `GROUP_KEYS` or `PIECE_KEYS` for a new field, plus its check.
+1. `brickwise/schema.py`: constants such as the palette, shape heights, the complexity table and word limits.
+2. `brickwise/validate.py`: `SPEC_KEYS`, `GROUP_KEYS` or `PIECE_KEYS` for a new field, plus its check.
 3. `viewer/viewer.js`: its own copies of `PALETTE` and `SHAPE_HEIGHT`, and anything it renders.
-4. `skills/lego-explainer/SKILL.md`: what Claude is told to write.
+4. `skills/brickwise/SKILL.md`: what Claude is told to write.
 5. `README.md`: the spec reference.
 6. `examples/*.json`: they are test fixtures and must still validate.
 

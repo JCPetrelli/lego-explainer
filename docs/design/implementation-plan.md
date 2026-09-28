@@ -1,8 +1,8 @@
-# LEGO Explainer Implementation Plan
+# Brickwise Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A global Claude skill that turns any target into an interactive 3D LEGO model (orbit, two-stage explode, hover labels, click popups), built from a validated JSON spec.
+**Goal:** A global Claude skill that turns any target into an interactive 3D brick model (orbit, two-stage explode, hover labels, click popups), built from a validated JSON spec.
 
 **Architecture:** Claude writes a JSON build spec; a Python engine validates it (overlap, floating, complexity↔size) and injects it into a fixed three.js viewer template, producing one self-contained HTML per build plus a gallery index. The skill file only holds the workflow and rules.
 
@@ -36,7 +36,7 @@
 ### Task 1: Schema constants + project scaffold
 
 **Files:**
-- Create: `lego_explainer/__init__.py`, `lego_explainer/schema.py`, `justfile`, `.gitignore`, `tests/__init__.py`
+- Create: `brickwise/__init__.py`, `brickwise/schema.py`, `justfile`, `.gitignore`, `tests/__init__.py`
 
 **Interfaces — Produces:**
 - `PALETTE: dict[str, str]` name → hex
@@ -52,7 +52,7 @@
 
 ### Task 2: Validator
 
-**Files:** Create `lego_explainer/validate.py`, `tests/test_validate.py`
+**Files:** Create `brickwise/validate.py`, `tests/test_validate.py`
 
 **Interfaces — Produces:**
 - `validate(spec: dict) -> list[str]` — empty list = valid.
@@ -82,12 +82,12 @@ def test_bad_types_do_not_crash(): x="a", w=0, pieces missing → errors, no exc
 
 ### Task 3: Builder + gallery + CLI
 
-**Files:** Create `lego_explainer/build.py`, `lego_explainer/gallery.py`, `viewer/viewer.html` (template stub with markers), `tests/test_build.py`
+**Files:** Create `brickwise/build.py`, `brickwise/gallery.py`, `viewer/viewer.html` (template stub with markers), `tests/test_build.py`
 
 **Interfaces:**
 - Consumes: `validate(spec)`.
-- Produces: `slugify(text) -> str`; `render_html(spec: dict) -> str`; `build(spec_path: Path, builds_dir: Path, today: date | None = None) -> Path`; `write_gallery(builds_dir: Path) -> Path`; CLI `python3 -m lego_explainer.build SPEC [--out DIR] [--open]`, exit 1 on errors.
-- Template markers: `/*__SPEC_JSON__*/` inside `<script type="application/json" id="lego-spec">`, `/*__VIEWER_JS__*/` inside `<script type="module">`, `__TITLE__` in `<title>`.
+- Produces: `slugify(text) -> str`; `render_html(spec: dict) -> str`; `build(spec_path: Path, builds_dir: Path, today: date | None = None) -> Path`; `write_gallery(builds_dir: Path) -> Path`; CLI `python3 -m brickwise.build SPEC [--out DIR] [--open]`, exit 1 on errors.
+- Template markers: `/*__SPEC_JSON__*/` inside `<script type="application/json" id="brick-spec">`, `/*__VIEWER_JS__*/` inside `<script type="module">`, `__TITLE__` in `<title>`.
 
 Tests:
 
@@ -117,8 +117,8 @@ Units: 1 stud = 1.0, plate = 0.4, stud r 0.3 h 0.18. Model centred on the origin
 - State machine: `setState(1|2|3, groupId?)`. Offsets: state 2 = group dir × spread + lift; state 3 adds a per-piece spread of `(pieceCentre − groupCentre) × 1.2 + level lift`. Tween 600 ms, easeInOutCubic. Zero-length direction → angle `2π·i/n`.
 - State 3: other groups fade to opacity 0.2 (materials are per piece).
 - OrbitControls with damping, autoRotate until the first `start` event.
-- CDN guard: an inline non-module script shows `#load-error` if `window.__legoReady` is not set within 6 s.
-- Test hook: `window.__lego = {state, setState, screenPos(id), pieceIds}`.
+- CDN guard: an inline non-module script shows `#load-error` if `window.__brickwiseReady` is not set within 6 s.
+- Test hook: `window.__brickwise = {state, setState, screenPos(id), pieceIds}`.
 
 - [ ] Implement, build `samples/stack.json`, open, confirm visually. Commit.
 
@@ -134,9 +134,9 @@ Units: 1 stud = 1.0, plate = 0.4, stud r 0.3 h 0.18. Model centred on the origin
 
 ### Task 6: Samples, smoke test, skill, registration
 
-**Files:** `samples/stack.json` (lego_explainer's own architecture), `samples/themed.json` (a web request as a train), `~/.claude/skills/lego-explainer/SKILL.md`, `README.md`.
+**Files:** `samples/stack.json` (brickwise's own architecture), `samples/themed.json` (a web request as a train), `~/.claude/skills/brickwise/SKILL.md`, `README.md`.
 
 - [ ] Both samples pass `validate` (already covered by the Task 2 test).
-- [ ] Smoke test in Chrome via DevTools MCP: load the themed build; no console errors; `__lego.screenPos` → dispatch pointermove → label visible; dispatch click → popup visible; `setState(2)`, then click a group → state 3; no NaN positions.
+- [ ] Smoke test in Chrome via DevTools MCP: load the themed build; no console errors; `__brickwise.screenPos` → dispatch pointermove → label visible; dispatch click → popup visible; `setState(2)`, then click a group → state 3; no NaN positions.
 - [ ] SKILL.md: triggers, the 6-step workflow, layout rules for stack/themed, the brick-size table, description style, the retry limit, the publish option (Artifact tool, private).
 - [ ] README, repos.md entry. Commit.

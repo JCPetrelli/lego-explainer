@@ -1,5 +1,5 @@
 {
-  "name": "lego-explainer-smoke",
+  "name": "brickwise-smoke",
   "private": true,
   "type": "module",
   "dependencies": { "puppeteer-core": "^23.0.0" }

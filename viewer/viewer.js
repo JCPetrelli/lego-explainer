@@ -1,9 +1,9 @@
-// LEGO Explainer viewer: renders a validated build spec as an explorable LEGO model.
+// Brickwise viewer: renders a validated build spec as an explorable brick model.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
-// Keep in sync with lego_explainer/schema.py.
+// Keep in sync with brickwise/schema.py.
 const PALETTE = {
   'red': '#c91a09', 'blue': '#0055bf', 'yellow': '#f2cd37', 'green': '#237841',
   'dark-green': '#184632', 'orange': '#fe8a18', 'white': '#f4f4f4', 'light-grey': '#a0a5a9',
@@ -21,7 +21,7 @@ const FADED = 0.18;
 const CLICK_SLOP = 5;        // px of pointer travel still counted as a click
 
 const $ = (id) => document.getElementById(id);
-const spec = JSON.parse($('lego-spec').textContent);
+const spec = JSON.parse($('brick-spec').textContent);
 const groupIndex = new Map(spec.groups.map((g, i) => [g.id, i]));
 const groupOf = (id) => spec.groups[groupIndex.get(id)];
 
@@ -31,7 +31,7 @@ $('mode').textContent = spec.mode === 'themed' ? 'Themed model' : 'Stack';
 $('metaphor').textContent = spec.metaphor;
 document.title = spec.title;
 {
-  const url = document.querySelector('meta[name="lego-source"]')?.content;
+  const url = document.querySelector('meta[name="brick-source"]')?.content;
   if (url) {
     const link = $('source-link');
     link.href = url;
@@ -549,6 +549,14 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// First view: back the camera off until the whole model fits the screen's real shape
+// (a portrait phone needs roughly twice the distance of a desktop window).
+{
+  const dir = camera.position.clone().sub(controls.target);
+  dir.setLength(Math.max(dir.length(), fitDistance(radius)));
+  camera.position.copy(controls.target).add(dir);
+}
+
 function frame(now) {
   stepTweens(now);
   controls.update();
@@ -563,7 +571,7 @@ renderControls();
 requestAnimationFrame(frame);
 
 // Hook for automated smoke tests.
-window.__lego = {
+window.__brickwise = {
   get state() { return state; },
   get selectedGroup() { return selectedGroup; },
   setState,
@@ -578,4 +586,4 @@ window.__lego = {
     return pieces.every((r) => ['x', 'y', 'z'].every((k) => Number.isFinite(r.position[k])));
   },
 };
-window.__legoReady = true;
+window.__brickwiseReady = true;

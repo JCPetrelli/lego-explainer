@@ -4,8 +4,8 @@ from datetime import date
 
 import pytest
 
-from lego_explainer import build as build_mod
-from lego_explainer.build import BuildError, build, render_html, slugify
+from brickwise import build as build_mod
+from brickwise.build import BuildError, build, render_html, slugify
 from tests.test_validate import base_spec
 
 DAY = date(2026, 9, 27)
@@ -18,7 +18,7 @@ def spec_file(tmp_path, spec=None, name="spec.json"):
 
 
 def embedded_json(html):
-    m = re.search(r'<script type="application/json" id="lego-spec">(.*?)</script>', html, re.S)
+    m = re.search(r'<script type="application/json" id="brick-spec">(.*?)</script>', html, re.S)
     assert m, "spec block missing"
     return m.group(1)
 
@@ -31,7 +31,7 @@ def test_slugify():
 def test_render_embeds_spec_and_viewer_js():
     html = render_html(base_spec())
     assert json.loads(embedded_json(html))["title"] == "Tiny"
-    assert "__lego" in html  # viewer.js was inlined
+    assert "__brickwise" in html  # viewer.js was inlined
     assert "/*__" not in html  # no marker left behind
     assert "<title>Tiny</title>" in html
 
@@ -125,15 +125,15 @@ def test_cli_rejects_nan(tmp_path, capsys):
 
 
 def test_default_builds_dir_env_override(tmp_path, monkeypatch):
-    monkeypatch.setenv("LEGO_EXPLAINER_BUILDS", str(tmp_path / "mine"))
+    monkeypatch.setenv("BRICKWISE_BUILDS", str(tmp_path / "mine"))
     assert build_mod.default_builds_dir() == tmp_path / "mine"
 
 
 def test_default_builds_dir_clone_vs_install(tmp_path, monkeypatch):
-    monkeypatch.delenv("LEGO_EXPLAINER_BUILDS", raising=False)
+    monkeypatch.delenv("BRICKWISE_BUILDS", raising=False)
     monkeypatch.setattr(build_mod, "ROOT", tmp_path)
     monkeypatch.setattr(build_mod.Path, "home", classmethod(lambda cls: tmp_path / "home"))
-    assert build_mod.default_builds_dir() == tmp_path / "home" / "lego-explainer-builds"
+    assert build_mod.default_builds_dir() == tmp_path / "home" / "brickwise-builds"
     (tmp_path / ".git").mkdir()
     assert build_mod.default_builds_dir() == tmp_path / "builds"
 
@@ -141,12 +141,12 @@ def test_default_builds_dir_clone_vs_install(tmp_path, monkeypatch):
 def test_cli_html_writes_single_page_without_gallery(tmp_path, capsys):
     out = tmp_path / "page.html"
     assert build_mod.main([str(spec_file(tmp_path)), "--html", str(out)]) == 0
-    assert "__lego" in out.read_text()
+    assert "__brickwise" in out.read_text()
     assert not (tmp_path / "index.html").exists()
 
 
 def test_gallery_omits_date_for_undated_files(tmp_path):
-    from lego_explainer.gallery import write_gallery
+    from brickwise.gallery import write_gallery
     (tmp_path / "relativity.json").write_text(json.dumps(base_spec()))
     (tmp_path / "relativity.html").write_text("x")
     index = write_gallery(tmp_path).read_text()
@@ -161,7 +161,7 @@ def test_source_link_rendered_when_given():
 
 def test_source_link_empty_by_default():
     html = render_html(base_spec())
-    assert '<meta name="lego-source" content="">' in html
+    assert '<meta name="brick-source" content="">' in html
 
 
 def test_source_link_rejects_non_http():
@@ -174,3 +174,45 @@ def test_cli_source_link(tmp_path):
     assert build_mod.main([str(spec_file(tmp_path)), "--html", str(out),
                            "--source-link", "https://github.com/o/r"]) == 0
     assert 'content="https://github.com/o/r"' in out.read_text()
+
+
+def test_preview_meta_tags():
+    spec = base_spec()
+    spec["metaphor"] = 'Two "layers" & more.'
+    html = render_html(spec, og_image="https://x.io/p.png")
+    assert '<meta property="og:title" content="Tiny">' in html
+    assert '<meta property="og:description" content="Two &quot;layers&quot; &amp; more.">' in html
+    assert '<meta name="description" content="Two &quot;layers&quot; &amp; more.">' in html
+    assert '<meta property="og:image" content="https://x.io/p.png">' in html
+    assert '<meta name="twitter:card" content="summary_large_image">' in html
+    assert "__OG_" not in html and "__DESCRIPTION__" not in html
+
+
+def test_no_og_image_by_default():
+    html = render_html(base_spec())
+    assert "og:image" not in html
+    assert '<meta name="twitter:card" content="summary">' in html
+
+
+def test_og_image_rejects_non_http():
+    with pytest.raises(ValueError):
+        render_html(base_spec(), og_image="file:///etc/passwd")
+
+
+def test_pages_have_inline_favicon(tmp_path):
+    from brickwise.gallery import write_gallery
+    assert 'rel="icon" href="data:image/svg+xml' in render_html(base_spec())
+    assert 'rel="icon" href="data:image/svg+xml' in write_gallery(tmp_path).read_text()
+
+
+def test_gallery_title_and_og_image(tmp_path):
+    from brickwise.gallery import write_gallery
+    index = write_gallery(tmp_path, title="Brickwise examples", og_image="https://x.io/p.png").read_text()
+    assert "<title>Brickwise examples</title>" in index
+    assert '<meta property="og:image" content="https://x.io/p.png">' in index
+
+
+def test_cli_og_image(tmp_path):
+    out = tmp_path / "p.html"
+    assert build_mod.main([str(spec_file(tmp_path)), "--html", str(out), "--og-image", "https://x.io/p.png"]) == 0
+    assert 'og:image" content="https://x.io/p.png"' in out.read_text()

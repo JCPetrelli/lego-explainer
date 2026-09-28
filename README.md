@@ -1,12 +1,14 @@
-# LEGO Explainer
+# Brickwise
 
-A [Claude Code](https://claude.com/claude-code) skill that explains a codebase, an architecture, or any complicated topic as an interactive 3D LEGO model.
+[![tests](https://github.com/JCPetrelli/brickwise/actions/workflows/test.yml/badge.svg)](https://github.com/JCPetrelli/brickwise/actions/workflows/test.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![latest release](https://img.shields.io/github/v/release/JCPetrelli/brickwise)](https://github.com/JCPetrelli/brickwise/releases)
+
+A [Claude Code](https://claude.com/claude-code) skill that explains a codebase, an architecture, or any complicated topic as an interactive 3D brick model.
 
 Each concept is a brick, and related bricks form a sub-assembly. The finished model is the whole topic. **A brick's size shows how complex its concept is**, so you can see at a glance where the weight of the subject sits.
 
 ![Clicking a brick opens its explanation](docs/images/popup.jpg)
 
-**Live demos:** [Web Request Lifecycle](https://jcpetrelli.github.io/lego-explainer/examples/web-request.html) · [LEGO Explainer Internals](https://jcpetrelli.github.io/lego-explainer/examples/lego-explainer.html) · [Theory of Relativity](https://jcpetrelli.github.io/lego-explainer/examples/relativity.html) · [all examples](https://jcpetrelli.github.io/lego-explainer/examples/)
+**Live demos:** [Web Request Lifecycle](https://jcpetrelli.github.io/brickwise/examples/web-request.html) · [Brickwise Internals](https://jcpetrelli.github.io/brickwise/examples/brickwise.html) · [Theory of Relativity](https://jcpetrelli.github.io/brickwise/examples/relativity.html) · [all examples](https://jcpetrelli.github.io/brickwise/examples/)
 
 ## What you get
 
@@ -29,14 +31,14 @@ Claude chooses between two kinds of model:
 
 | | |
 |---|---|
-| **Web Request Lifecycle** (themed: a train)<br>[`examples/web-request.html`](examples/web-request.html) | **Theory of Relativity** (stack)<br>[`examples/relativity.html`](examples/relativity.html) |
-| **LEGO Explainer Internals** (stack: this repo explaining itself)<br>[`examples/lego-explainer.html`](examples/lego-explainer.html) | ![The relativity model exploded into its five groups](docs/images/exploded.jpg) |
+| **[Web Request Lifecycle](https://jcpetrelli.github.io/brickwise/examples/web-request.html)** (themed: a train)<br>spec: [`examples/web-request.json`](examples/web-request.json) | **[Theory of Relativity](https://jcpetrelli.github.io/brickwise/examples/relativity.html)** (stack)<br>spec: [`examples/relativity.json`](examples/relativity.json) |
+| **[Brickwise Internals](https://jcpetrelli.github.io/brickwise/examples/brickwise.html)** (stack: this repo explaining itself)<br>spec: [`examples/brickwise.json`](examples/brickwise.json) | ![The relativity model exploded into its five groups](docs/images/exploded.jpg) |
 
-Download any of them and open it in a browser, or browse `examples/index.html`. The specs they were built from sit next to them as `.json` files.
+Each title opens the live page. The `.json` spec it was built from is linked underneath, and [all examples](https://jcpetrelli.github.io/brickwise/examples/) are in one gallery.
 
 **Host the examples** (optional). Every page is a single static file, so any static host works. On GitHub Pages:
 1. Open **Settings → Pages** and set the source to **Deploy from a branch**, branch `main`, folder `/ (root)`.
-2. The gallery is then at `https://<user>.github.io/lego-explainer/examples/`, and each page at `…/examples/relativity.html` and so on.
+2. The gallery is then at `https://<user>.github.io/brickwise/examples/`, and each page at `…/examples/relativity.html` and so on.
 
 | Hover a brick | Take one group apart |
 |---|---|
@@ -54,16 +56,16 @@ Requirements:
 **As a plugin** (recommended):
 
 ```
-/plugin marketplace add JCPetrelli/lego-explainer
-/plugin install lego-explainer@lego-explainer
+/plugin marketplace add JCPetrelli/brickwise
+/plugin install brickwise@brickwise
 ```
 
 **Manually**, from a clone:
 
 ```bash
-git clone https://github.com/JCPetrelli/lego-explainer.git
-cd lego-explainer
-just install      # or: ln -s "$(pwd)/skills/lego-explainer" ~/.claude/skills/lego-explainer
+git clone https://github.com/JCPetrelli/brickwise.git
+cd brickwise
+just install      # or: ln -s "$(pwd)/skills/brickwise" ~/.claude/skills/brickwise
 ```
 
 Start a new Claude Code session after installing so the skill is picked up.
@@ -72,15 +74,15 @@ Start a new Claude Code session after installing so the skill is picked up.
 
 | Install | Command |
 |---|---|
-| Plugin | `claude plugin update lego-explainer@lego-explainer`, then restart Claude Code |
+| Plugin | `claude plugin update brickwise@brickwise`, then restart Claude Code |
 | Manual | `git pull` in the clone; the symlink picks up the change |
 
 **Uninstall:**
 
 | Install | Command |
 |---|---|
-| Plugin | `claude plugin uninstall lego-explainer@lego-explainer`, and optionally `claude plugin marketplace remove lego-explainer` |
-| Manual | `rm ~/.claude/skills/lego-explainer` (removes only the symlink), then delete the clone |
+| Plugin | `claude plugin uninstall brickwise@brickwise`, and optionally `claude plugin marketplace remove brickwise` |
+| Manual | `rm ~/.claude/skills/brickwise` (removes only the symlink), then delete the clone |
 
 Your builds are never deleted by either route. They stay in the builds folder described below.
 
@@ -89,24 +91,24 @@ Your builds are never deleted by either route. They stay in the builds folder de
 Ask Claude in plain words, or call the skill directly:
 
 ```
-explain this repo as a LEGO model
-build me a LEGO of how OAuth works
-/lego-explainer ~/code/my-service          # manual install
-/lego-explainer:lego-explainer photosynthesis   # plugin install (namespaced)
+explain this repo as a brick model
+build me a brick model of how OAuth works
+/brickwise ~/code/my-service          # manual install
+/brickwise:brickwise photosynthesis   # plugin install (namespaced)
 ```
 
 Add "publish" to the request to also get a shareable claude.ai link, when your Claude Code session has the Artifact tool.
 
 Claude reads the target, breaks it into 4–8 groups of 2–6 concepts, scores each concept's complexity, picks themed or stack, places the bricks, writes the text, and builds the page. It opens the page and gives you the path.
 
-**Where builds go:** `$LEGO_EXPLAINER_BUILDS` if you set it. Otherwise `builds/` inside a git clone, or `~/lego-explainer-builds/` for a plugin install, since the plugin cache is replaced on update. Each builds folder has an `index.html` gallery; from a clone, `just run` serves it at http://localhost:5733.
+**Where builds go:** `$BRICKWISE_BUILDS` if you set it. Otherwise `builds/` inside a git clone, or `~/brickwise-builds/` for a plugin install, since the plugin cache is replaced on update. Each builds folder has an `index.html` gallery; from a clone, `just run` serves it at http://localhost:5733.
 
 ## How it works
 
 ```
-target ──► Claude (skills/lego-explainer/SKILL.md) ──► build spec (JSON)
+target ──► Claude (skills/brickwise/SKILL.md) ──► build spec (JSON)
                                                           │
-                                  lego_explainer.build ◄──┘
+                                  brickwise.build ◄──┘
                                   ├─ validate.py   every rule, all errors in one pass
                                   ├─ viewer.html + viewer.js   fixed, tested three.js viewer
                                   └─ one self-contained HTML page + gallery
@@ -126,9 +128,9 @@ If the spec fails, Claude gets a precise error list (for example `piece 'db' ove
 You can also write specs yourself and build them without Claude:
 
 ```bash
-python3 -m lego_explainer.build my-spec.json --open        # into the builds folder + gallery
-python3 -m lego_explainer.build my-spec.json --html out.html   # just one page
-python3 -m lego_explainer.build my-spec.json --html out.html --source-link https://github.com/you/repo
+python3 -m brickwise.build my-spec.json --open        # into the builds folder + gallery
+python3 -m brickwise.build my-spec.json --html out.html   # just one page
+python3 -m brickwise.build my-spec.json --html out.html --source-link https://github.com/you/repo
                                                     # adds a GitHub button, as on the example pages
 ```
 
@@ -214,17 +216,17 @@ python3 -m lego_explainer.build my-spec.json --html out.html --source-link https
 |---|---|
 | "The 3D viewer could not start" after a few seconds | three.js could not be downloaded from cdn.jsdelivr.net. Check the internet connection, or a firewall or ad-blocker blocking jsDelivr, then reload. |
 | "WebGL is not available in this browser" | Hardware acceleration is off or unsupported. Enable it in the browser settings, or try another browser. |
-| Claude answers in text and builds nothing | The skill isn't loaded. Start a new session after installing, check that `~/.claude/skills/lego-explainer` exists (manual) or run `claude plugin list` (plugin), and ask explicitly: "build a LEGO model of …". |
-| `/lego-explainer` is not recognised after a plugin install | Plugin skills are namespaced: use `/lego-explainer:lego-explainer`, or ask in plain words. |
+| Claude answers in text and builds nothing | The skill isn't loaded. Start a new session after installing, check that `~/.claude/skills/brickwise` exists (manual) or run `claude plugin list` (plugin), and ask explicitly: "build a brick model of …". |
+| `/brickwise` is not recognised after a plugin install | Plugin skills are namespaced: use `/brickwise:brickwise`, or ask in plain words. |
 | The build fails and Claude shows a list of errors | Claude stops after three repair attempts. Ask it to keep fixing, or narrow the target, e.g. one subsystem instead of a whole monorepo. |
-| The page opened from `examples/` on GitHub shows source code | GitHub displays HTML files as code. Download the file, or host the examples as described under Examples. |
+| The page opened from `examples/` on GitHub shows source code | GitHub displays HTML files as code. Use the live demo links at the top, or host your own copy as described under Examples. |
 
 ## Repository layout
 
 ```
-skills/lego-explainer/SKILL.md   the skill Claude follows
+skills/brickwise/SKILL.md   the skill Claude follows
 .claude-plugin/                  plugin + marketplace manifests
-lego_explainer/                  schema.py · validate.py · build.py (CLI) · gallery.py
+brickwise/                  schema.py · validate.py · build.py (CLI) · gallery.py
 viewer/                          viewer.html template · viewer.js
 examples/                        example specs, their built pages, index.html
 tests/                           pytest suite · smoke/ headless-Chrome check
@@ -241,6 +243,13 @@ just smoke examples/relativity.html gps     # hover, click, explode in headless 
 
 These use `just`; without it, run the matching lines from the `justfile` directly. `just smoke` needs Node.js: it installs `puppeteer-core` into `tests/smoke/` on first run and drives your local Chrome. Set `CHROME_PATH` outside macOS. See [CONTRIBUTING.md](CONTRIBUTING.md) before changing the spec format or the viewer.
 
+## Credits
+
+- 3D rendering: [three.js](https://threejs.org) (MIT), loaded from [jsDelivr](https://www.jsdelivr.com).
+- Built with [Claude Code](https://claude.com/claude-code).
+
 ## License
 
 [MIT](LICENSE) © 2026 Jacopo Castellano
+
+Brickwise is an independent project. It is not affiliated with, sponsored by or endorsed by the LEGO Group or any toy-brick manufacturer. LEGO® is a trademark of the LEGO Group.

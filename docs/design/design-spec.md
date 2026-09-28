@@ -1,11 +1,11 @@
-# LEGO Explainer — Design
+# Brickwise — Design
 
 Date: 2026-09-27
 Status: original design, approved 2026-09-27. The README is the current reference; later additions are marked inline.
 
 ## Purpose
 
-A global Claude Code skill that explains any target — a codebase, a subsystem, or an abstract topic — as an interactive 3D LEGO model. Each concept is a brick; the whole build is the whole topic. The user orbits the model, explodes it apart in two stages, hovers bricks for titles and clicks them for terse descriptions.
+A global Claude Code skill that explains any target — a codebase, a subsystem, or an abstract topic — as an interactive 3D brick model. Each concept is a brick; the whole build is the whole topic. The user orbits the model, explodes it apart in two stages, hovers bricks for titles and clicks them for terse descriptions.
 
 Success: opening a build gives a correct, memorable mental model of the target in a few minutes, and every build behaves identically because the viewer is fixed and tested.
 
@@ -22,8 +22,8 @@ Success: opening a build gives a correct, memorable mental model of the target i
 ## Layout
 
 ```
-skills/lego-explainer/SKILL.md   the skill: workflow + rules for Claude
-lego_explainer/                  schema.py, validate.py, build.py, gallery.py
+skills/brickwise/SKILL.md   the skill: workflow + rules for Claude
+brickwise/                  schema.py, validate.py, build.py, gallery.py
 viewer/                          viewer.html template, viewer.js (three.js via CDN)
 examples/                        example specs + built pages (fixtures and references)
 tests/                           pytest suite, smoke/ headless-Chrome check
@@ -56,7 +56,7 @@ The skill stays thin; all logic lives in the engine. *(Originally the skill live
 - Units: `x`, `z`, `w` (width along x), `d` (depth along z) in studs; `level` in plate heights. A `brick` is 3 plates tall; `plate`, `tile`, `slope` are 1 plate tall except `slope`, which is 3 (brick height, sloped top). `tile` has no studs.
 - `x`, `z` are the brick's minimum corner; the baseplate occupies levels < 0 and has its origin at (0, 0). Baseplate size is computed from the build extent plus a 2-stud margin.
 - No rotation field: orientation is expressed by swapping `w`/`d`. Slopes descend toward +z.
-- Colours: a fixed palette of 12 named LEGO colours (red, blue, yellow, green, dark-green, orange, white, light-grey, dark-grey, black, tan, azure). Pieces default to their group's colour; a piece may override within the palette.
+- Colours: a fixed palette of 12 named brick colours (red, blue, yellow, green, dark-green, orange, white, light-grey, dark-grey, black, tan, azure). Pieces default to their group's colour; a piece may override within the palette.
 - Descriptions (groups and pieces): non-empty, at most 40 words.
 - `details` (pieces, required): longer explanation, at most 120 words. `example` (pieces, optional): one concrete example, at most 60 words, non-empty when present. *(Added 2026-09-27 after first release.)*
 
@@ -74,7 +74,7 @@ Footprint area = `w × d`.
 
 ## Validator
 
-`python -m lego_explainer.build <spec.json>` validates, then builds. It rejects, with one precise message per error (e.g. `piece 'mailer' overlaps 'queue' at x=4 z=2 level=3`):
+`python -m brickwise.build <spec.json>` validates, then builds. It rejects, with one precise message per error (e.g. `piece 'mailer' overlaps 'queue' at x=4 z=2 level=3`):
 
 - Schema errors: missing/unknown fields, bad types, unknown `mode`, `shape`, `color`, `group`; duplicate ids.
 - Group without pieces; group count outside 1–8; piece count above 40.
@@ -114,7 +114,7 @@ Button label cycles: *Explode → Pick a group → Reassemble*.
 
 ## Skill workflow (SKILL.md)
 
-Invocation: `/lego-explainer <path or topic> [publish]`.
+Invocation: `/brickwise <path or topic> [publish]`.
 
 1. **Understand the target.** Path → explore entry points, modules, dependencies (Explore agent for large repos). Topic → own knowledge, plus web research if recent/niche.
 2. **Decompose** into 4–8 groups × 2–6 pieces; score each piece's complexity 1–5.

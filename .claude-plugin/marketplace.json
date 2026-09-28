@@ -1,14 +1,14 @@
 {
-  "name": "lego-explainer",
+  "name": "brickwise",
   "owner": {
     "name": "Jacopo Castellano"
   },
-  "description": "The lego-explainer skill: any codebase or topic as an explorable 3D LEGO model.",
+  "description": "The brickwise skill: any codebase or topic as an explorable 3D brick model.",
   "plugins": [
     {
-      "name": "lego-explainer",
+      "name": "brickwise",
       "source": "./",
-      "description": "Explain any codebase or topic as an interactive 3D LEGO model."
+      "description": "Explain any codebase or topic as an interactive 3D brick model."
     }
   ]
 }

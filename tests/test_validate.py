@@ -2,7 +2,7 @@ import copy
 import json
 from pathlib import Path
 
-from lego_explainer.validate import cells, validate
+from brickwise.validate import cells, validate
 
 SAMPLES = sorted((Path(__file__).parent.parent / "examples").glob("*.json"))
 

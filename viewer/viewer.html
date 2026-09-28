@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>__TITLE__</title>
-<meta name="lego-source" content="__SOURCE_LINK__">
+<meta name="brick-source" content="__SOURCE_LINK__">
+__HEAD_META__
 <style>
   :root {
     --scene-bg: #ece8de;
@@ -138,10 +139,10 @@
     <p id="load-error-msg">three.js did not load from cdn.jsdelivr.net. Check the internet connection and reload.</p>
   </div>
 </div>
-<script type="application/json" id="lego-spec">/*__SPEC_JSON__*/</script>
+<script type="application/json" id="brick-spec">/*__SPEC_JSON__*/</script>
 <script>
   setTimeout(function () {
-    if (!window.__legoReady) document.getElementById("load-error").hidden = false;
+    if (!window.__brickwiseReady) document.getElementById("load-error").hidden = false;
   }, 6000);
 </script>
 <script type="module">
